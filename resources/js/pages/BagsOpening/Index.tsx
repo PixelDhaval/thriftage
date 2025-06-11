@@ -6,7 +6,7 @@ import { type BreadcrumbItem, type ImportBag } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { format } from 'date-fns';
-import { Scan } from 'lucide-react';
+import { CheckCircle, Scan } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -172,21 +172,60 @@ export default function Index() {
                 </div>
             ),
         },
+        {
+            id: 'status',
+            header: 'Status',
+            enableSorting: false,
+            cell: ({ row }: { row: any }) => (
+                <div className="flex items-center gap-2">
+                    <span
+                        className={`rounded-full px-2 py-1 text-xs ${
+                            row.original.status === 'opened' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}
+                    >
+                        {row.original.status}
+                    </span>
+                </div>
+            ),
+        },
+
         ...(userPermissions.includes('bags-opening-update')
             ? [
                   {
-                      id: 'status',
-                      header: 'Status',
+                      id: 'actions',
+                      header: 'Actions',
                       enableSorting: false,
                       cell: ({ row }: { row: any }) => (
                           <div className="flex items-center gap-2">
-                              <span
-                                  className={`rounded-full px-2 py-1 text-xs ${
-                                      row.original.status === 'opened' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                  }`}
-                              >
-                                  {row.original.status}
-                              </span>
+                              {userPermissions.includes('import-bags-update') && (
+                                  <>
+                                      {row.original.status === 'unopened' ? (
+                                          <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => handleMarkAsOpened(row.original)}
+                                              disabled={isUpdating === row.original.id.toString()}
+                                              className="h-8 border-green-200 bg-green-50 px-3 text-green-700 hover:bg-green-100"
+                                              title="Mark this bag as opened"
+                                          >
+                                              <CheckCircle className="mr-1 h-3 w-3" />
+                                              {isUpdating === row.original.id.toString() ? 'Updating...' : 'Mark as Opened'}
+                                          </Button>
+                                      ) : (
+                                          <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => handleMarkAsUnopened(row.original)}
+                                              disabled={isUpdating === row.original.id.toString()}
+                                              className="h-8 border-red-200 bg-red-50 px-3 text-red-700 hover:bg-red-100"
+                                              title="Mark this bag as unopened"
+                                          >
+                                              <CheckCircle className="mr-1 h-3 w-3" />
+                                              {isUpdating === row.original.id.toString() ? 'Updating...' : 'Mark as Unopened'}
+                                          </Button>
+                                      )}
+                                  </>
+                              )}
                           </div>
                       ),
                   },
