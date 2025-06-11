@@ -163,7 +163,7 @@ export default function Index({ parties }: Props) {
                                     Add Party
                                 </Button>
                             </DialogTrigger>
-                            <DialogContent>
+                            <DialogContent className="max-h-[90vh] overflow-y-auto">
                                 <DialogHeader>
                                     <DialogTitle>Create New Party</DialogTitle>
                                     <DialogDescription>Add a new party to the system.</DialogDescription>
@@ -190,7 +190,7 @@ export default function Index({ parties }: Props) {
                 />
 
                 <Dialog open={isEditPartyDialogOpen} onOpenChange={setIsEditPartyDialogOpen}>
-                    <DialogContent>
+                    <DialogContent className='max-h-[90vh] overflow-y-auto'>
                         <DialogHeader>
                             <DialogTitle>Edit Party</DialogTitle>
                             <DialogDescription>Update party details.</DialogDescription>
