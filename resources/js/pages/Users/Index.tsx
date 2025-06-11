@@ -136,7 +136,7 @@ export default function Index({ roles, permissions }: Props) {
                 />
             </div>
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                <DialogContent>
+                <DialogContent className='max-h-[90vh] overflow-y-auto'>
                     <DialogHeader>
                         <DialogTitle>Create New User</DialogTitle>
                         <DialogDescription>Add a new user to the system.</DialogDescription>
@@ -153,7 +153,7 @@ export default function Index({ roles, permissions }: Props) {
             </Dialog>
 
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                <DialogContent>
+                <DialogContent className='max-h-[90vh] overflow-y-auto'>
                     <DialogHeader>
                         <DialogTitle>Edit User</DialogTitle>
                         <DialogDescription>Update user details, roles, and permissions.</DialogDescription>
