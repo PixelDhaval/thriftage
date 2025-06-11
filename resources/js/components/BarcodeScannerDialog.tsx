@@ -3,9 +3,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import axios from 'axios';
-import { AlertCircle, CheckCircle, Package, Scan } from 'lucide-react';
+import { AlertCircle, Camera, Keyboard, Package, Scan, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import  BarcodeScannerComponent  from 'react-qr-barcode-scanner';
 
 interface Props {
     isOpen: boolean;
@@ -18,53 +19,104 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
     const [lastScannedBag, setLastScannedBag] = useState<any>(null);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [pendingBarcode, setPendingBarcode] = useState('');
+    const [isMobile, setIsMobile] = useState(false);
+    const [showCameraScanner, setShowCameraScanner] = useState(false);
+    const [cameraError, setCameraError] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+
+    // Detect mobile device
+    useEffect(() => {
+        const checkMobile = () => {
+            const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+            const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+            setIsMobile(isMobileDevice);
+        };
+        checkMobile();
+    }, []);
 
     // Audio functions for sound feedback
     const playSuccessSound = () => {
-        // Create success sound (higher pitch beep)
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-        oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.1);
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.3);
+        try {
+            // Create success sound (higher pitch beep)
+            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.1);
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+        } catch (error) {
+            // Ignore audio errors
+        }
     };
 
     const playAlertSound = () => {
-        // Create alert sound (lower pitch, longer beep)
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
-        oscillator.frequency.setValueAtTime(350, audioContext.currentTime + 0.2);
-        gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.6);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.6);
+        try {
+            // Create alert sound (lower pitch, longer beep)
+            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+            oscillator.frequency.setValueAtTime(350, audioContext.currentTime + 0.2);
+            gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.6);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.6);
+        } catch (error) {
+            // Ignore audio errors
+        }
+    };
+
+    // Handle barcode detection from camera
+    const handleBarcodeDetected = (result: string) => {
+        if (result && result.trim()) {
+            setBarcode(result.trim());
+            setShowCameraScanner(false);
+            setCameraError(null);
+            toast.success('Barcode detected!');
+            playSuccessSound();
+            
+            // Auto-submit the barcode
+            setTimeout(() => {
+                handleBarcodeSubmit(null, result.trim());
+            }, 500);
+        }
+    };
+
+    // Handle camera errors
+    const handleCameraError = (error: any) => {
+        console.error('Camera error:', error);
+        setCameraError('Unable to access camera. Please check permissions and try again.');
+        toast.error('Camera access failed. Please check permissions.');
     };
 
     // Focus input when dialog opens
     useEffect(() => {
-        if (isOpen && inputRef.current) {
+        if (isOpen && inputRef.current && !showCameraScanner) {
             setTimeout(() => {
                 inputRef.current?.focus();
             }, 100);
         }
-    }, [isOpen]);
+    }, [isOpen, showCameraScanner]);
+
+    // Reset camera error when scanner is closed
+    useEffect(() => {
+        if (!showCameraScanner) {
+            setCameraError(null);
+        }
+    }, [showCameraScanner]);
 
     // Focus input after processing
     const focusInput = () => {
@@ -74,10 +126,12 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
         }, 100);
     };
 
-    const handleBarcodeSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleBarcodeSubmit = async (e?: React.FormEvent | null, submittedBarcode?: string) => {
+        if (e) e.preventDefault();
         
-        if (!barcode.trim()) {
+        const barcodeToSubmit = submittedBarcode || barcode.trim();
+        
+        if (!barcodeToSubmit) {
             toast.error('Please enter a barcode');
             focusInput();
             return;
@@ -87,7 +141,7 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
 
         try {
             const response = await axios.post('/api/import-bags/scan', 
-                { barcode: barcode.trim() },
+                { barcode: barcodeToSubmit },
                 {
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
@@ -102,7 +156,7 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
             if (type === 'already_opened') {
                 // Show confirmation dialog for already opened bag and play alert sound
                 setShowConfirmDialog(true);
-                setPendingBarcode(barcode.trim());
+                setPendingBarcode(barcodeToSubmit);
                 setLastScannedBag(bag);
                 playAlertSound(); // Play alert sound for confirmation
             } else if (type === 'status_changed') {
@@ -184,7 +238,14 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
         setLastScannedBag(null);
         setShowConfirmDialog(false);
         setPendingBarcode('');
+        setShowCameraScanner(false);
+        setCameraError(null);
         onClose();
+    };
+
+    const toggleCameraScanner = () => {
+        setShowCameraScanner(!showCameraScanner);
+        setCameraError(null);
     };
 
     return (
@@ -197,33 +258,120 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
                             Barcode Scanner
                         </DialogTitle>
                         <DialogDescription>
-                            Scan or enter barcode to update bag status. Press Ctrl+I to open this scanner.
+                            {isMobile ? 'Scan with camera or enter barcode manually.' : 'Scan or enter barcode to update bag status. Press Ctrl+I to open this scanner.'}
                         </DialogDescription>
                     </DialogHeader>
                     
-                    <form onSubmit={handleBarcodeSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="barcode">Barcode</Label>
-                            <Input
-                                ref={inputRef}
-                                id="barcode"
-                                value={barcode}
-                                onChange={(e) => setBarcode(e.target.value)}
-                                placeholder="Scan or enter barcode..."
-                                disabled={isProcessing}
-                                className="font-mono text-center text-lg py-3"
-                                autoComplete="off"
-                            />
+                    {/* Mobile scanner toggle */}
+                    {isMobile && (
+                        <div className="flex gap-2 mb-4">
+                            <Button
+                                type="button"
+                                variant={!showCameraScanner ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setShowCameraScanner(false)}
+                                className="flex items-center gap-2"
+                            >
+                                <Keyboard className="h-4 w-4" />
+                                Manual Input
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={showCameraScanner ? "default" : "outline"}
+                                size="sm"
+                                onClick={toggleCameraScanner}
+                                className="flex items-center gap-2"
+                            >
+                                <Camera className="h-4 w-4" />
+                                Camera Scan
+                            </Button>
                         </div>
+                    )}
 
-                        <Button 
-                            type="submit" 
-                            className="w-full" 
-                            disabled={isProcessing || !barcode.trim()}
-                        >
-                            {isProcessing ? 'Processing...' : 'Update Status'}
-                        </Button>
-                    </form>
+                    {/* Camera Scanner */}
+                    {showCameraScanner && (
+                        <div className="space-y-4">
+                            <div className="relative bg-black rounded-lg overflow-hidden">
+                                {cameraError ? (
+                                    <div className="w-full h-64 flex items-center justify-center bg-gray-100">
+                                        <div className="text-center p-4">
+                                            <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+                                            <p className="text-sm text-gray-600">{cameraError}</p>
+                                            <Button
+                                                onClick={toggleCameraScanner}
+                                                variant="outline"
+                                                size="sm"
+                                                className="mt-2"
+                                            >
+                                                Try Again
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <BarcodeScannerComponent
+                                            width="100%"
+                                            height={256}
+                                            onUpdate={(err, result) => {
+                                                if (err) {
+                                                    handleCameraError(err);
+                                                    return;
+                                                }
+                                                if (result) {
+                                                    handleBarcodeDetected(result.getText());
+                                                }
+                                            }}
+                                            facingMode="environment"
+                                        />
+                                        <div className="absolute inset-0 border-2 border-red-500 border-dashed m-8 rounded-lg pointer-events-none">
+                                            <div className="absolute top-2 left-2 right-2 text-center">
+                                                <span className="bg-black bg-opacity-50 text-white px-2 py-1 rounded text-sm">
+                                                    Align barcode within the frame
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                            <div className="flex justify-end">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setShowCameraScanner(false)}
+                                >
+                                    <X className="h-4 w-4 mr-2" />
+                                    Close Camera
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Manual Input Form */}
+                    {!showCameraScanner && (
+                        <form onSubmit={handleBarcodeSubmit} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="barcode">Barcode</Label>
+                                <Input
+                                    ref={inputRef}
+                                    id="barcode"
+                                    value={barcode}
+                                    onChange={(e) => setBarcode(e.target.value)}
+                                    placeholder="Scan or enter barcode..."
+                                    disabled={isProcessing}
+                                    className="font-mono text-center text-lg py-3"
+                                    autoComplete="off"
+                                />
+                            </div>
+
+                            <Button 
+                                type="submit" 
+                                className="w-full" 
+                                disabled={isProcessing || !barcode.trim()}
+                            >
+                                {isProcessing ? 'Processing...' : 'Update Status'}
+                            </Button>
+                        </form>
+                    )}
 
                     {/* Last Scanned Bag Info */}
                     {lastScannedBag && (
