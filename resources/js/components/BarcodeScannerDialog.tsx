@@ -6,7 +6,7 @@ import axios from 'axios';
 import { AlertCircle, Camera, Keyboard, Package, Scan, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import  BarcodeScannerComponent  from 'react-qr-barcode-scanner';
+import { BrowserMultiFormatReader, DecodeHintType } from '@zxing/library';
 
 interface Props {
     isOpen: boolean;
@@ -22,7 +22,11 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
     const [isMobile, setIsMobile] = useState(false);
     const [showCameraScanner, setShowCameraScanner] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
+    const [isScanning, setIsScanning] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const readerRef = useRef<BrowserMultiFormatReader | null>(null);
+    const scanningRef = useRef<boolean>(false);
 
     // Detect mobile device
     useEffect(() => {
@@ -79,45 +83,147 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
         }
     };
 
+    // Initialize barcode reader
+    useEffect(() => {
+        const hints = new Map();
+        hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+            'CODE_128',
+            'CODE_39',
+            'EAN_13',
+            'EAN_8',
+            'UPC_A',
+            'UPC_E'
+        ]);
+        
+        readerRef.current = new BrowserMultiFormatReader(hints);
+        
+        return () => {
+            if (readerRef.current) {
+                readerRef.current.reset();
+            }
+        };
+    }, []);
+
     // Handle barcode detection from camera
     const handleBarcodeDetected = (result: string) => {
-        if (result && result.trim()) {
+        if (result && result.trim() && !scanningRef.current) {
+            scanningRef.current = true;
             setBarcode(result.trim());
             setShowCameraScanner(false);
             setCameraError(null);
             toast.success('Barcode detected!');
             playSuccessSound();
             
+            // Stop scanning
+            stopScanning();
+            
             // Auto-submit the barcode
             setTimeout(() => {
                 handleBarcodeSubmit(null, result.trim());
+                scanningRef.current = false;
             }, 500);
         }
     };
 
-    // Handle camera errors - filter out normal scanning errors
-    const handleCameraError = (error: any) => {
-        // Check if it's a normal "no barcode detected" error
-        if (error?.name === 'NotFoundException' || 
-            error?.message?.includes('No MultiFormat Readers were able to detect the code') ||
-            error?.message?.includes('NotFoundException')) {
-            // This is normal - no barcode detected in current frame, don't show error
-            return;
-        }
-        
-        // Only log and show actual camera/permission errors
-        console.error('Camera error:', error);
-        if (error?.name === 'NotAllowedError' || error?.message?.includes('Permission denied')) {
-            setCameraError('Camera permission denied. Please allow camera access and try again.');
-            toast.error('Camera permission denied. Please check permissions.');
-        } else if (error?.name === 'NotFoundError' || error?.message?.includes('No camera found')) {
-            setCameraError('No camera found. Please ensure your device has a camera.');
-            toast.error('No camera found on this device.');
-        } else {
-            setCameraError('Unable to access camera. Please check permissions and try again.');
-            toast.error('Camera access failed. Please check permissions.');
+    // Start camera and scanning
+    const startScanning = async () => {
+        if (!readerRef.current || !videoRef.current) return;
+
+        try {
+            setIsScanning(true);
+            setCameraError(null);
+            scanningRef.current = false;
+
+            // Get camera constraints
+            const constraints = {
+                video: {
+                    facingMode: 'environment',
+                    width: { ideal: 1280, min: 640 },
+                    height: { ideal: 720, min: 480 },
+                    aspectRatio: { ideal: 16/9 }
+                }
+            };
+
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+                await videoRef.current.play();
+                
+                // Start decoding from video element
+                readerRef.current.decodeFromVideoDevice(
+                    undefined, // Use default camera
+                    videoRef.current,
+                    (result, error) => {
+                        if (result) {
+                            handleBarcodeDetected(result.getText());
+                        }
+                        // Don't log NotFoundException as it's normal when no barcode is detected
+                        if (error && !error.message.includes('NotFoundException')) {
+                            console.warn('Decode error:', error);
+                        }
+                    }
+                );
+            }
+        } catch (error: any) {
+            console.error('Camera error:', error);
+            setIsScanning(false);
+            
+            if (error?.name === 'NotAllowedError') {
+                setCameraError('Camera permission denied. Please allow camera access and try again.');
+                toast.error('Camera permission denied. Please check permissions.');
+            } else if (error?.name === 'NotFoundError') {
+                setCameraError('No camera found. Please ensure your device has a camera.');
+                toast.error('No camera found on this device.');
+            } else {
+                setCameraError('Unable to access camera. Please check permissions and try again.');
+                toast.error('Camera access failed. Please check permissions.');
+            }
         }
     };
+
+    // Stop scanning
+    const stopScanning = () => {
+        if (readerRef.current) {
+            readerRef.current.reset();
+        }
+        
+        if (videoRef.current && videoRef.current.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach(track => track.stop());
+            videoRef.current.srcObject = null;
+        }
+        
+        setIsScanning(false);
+        scanningRef.current = false;
+    };
+
+    // Handle camera scanner toggle
+    const toggleCameraScanner = () => {
+        if (showCameraScanner) {
+            stopScanning();
+            setShowCameraScanner(false);
+        } else {
+            setShowCameraScanner(true);
+            setCameraError(null);
+            setTimeout(startScanning, 100);
+        }
+    };
+
+    // Stop scanning when dialog closes
+    useEffect(() => {
+        if (!isOpen) {
+            stopScanning();
+            setShowCameraScanner(false);
+        }
+    }, [isOpen]);
+
+    // Stop scanning when camera scanner is closed
+    useEffect(() => {
+        if (!showCameraScanner) {
+            stopScanning();
+        }
+    }, [showCameraScanner]);
 
     // Focus input when dialog opens
     useEffect(() => {
@@ -257,13 +363,10 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
         setPendingBarcode('');
         setShowCameraScanner(false);
         setCameraError(null);
+        stopScanning();
         onClose();
     };
 
-    const toggleCameraScanner = () => {
-        setShowCameraScanner(!showCameraScanner);
-        setCameraError(null);
-    };
 
     return (
         <>
@@ -286,7 +389,11 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
                                 type="button"
                                 variant={!showCameraScanner ? "default" : "outline"}
                                 size="sm"
-                                onClick={() => setShowCameraScanner(false)}
+                                onClick={() => {
+                                    if (showCameraScanner) {
+                                        toggleCameraScanner();
+                                    }
+                                }}
                                 className="flex items-center gap-2"
                             >
                                 <Keyboard className="h-4 w-4" />
@@ -298,9 +405,10 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
                                 size="sm"
                                 onClick={toggleCameraScanner}
                                 className="flex items-center gap-2"
+                                disabled={isScanning}
                             >
                                 <Camera className="h-4 w-4" />
-                                Camera Scan
+                                {isScanning ? 'Starting...' : 'Camera Scan'}
                             </Button>
                         </div>
                     )}
@@ -326,27 +434,27 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
                                     </div>
                                 ) : (
                                     <>
-                                        <BarcodeScannerComponent
-                                            width="100%"
-                                            height={256}
-                                            onUpdate={(err, result) => {
-                                                if (err) {
-                                                    handleCameraError(err);
-                                                    return;
-                                                }
-                                                if (result) {
-                                                    handleBarcodeDetected(result.getText());
-                                                }
-                                            }}
-                                            facingMode="environment"
+                                        <video
+                                            ref={videoRef}
+                                            className="w-full h-64 object-cover"
+                                            playsInline
+                                            muted
+                                            autoPlay
                                         />
                                         <div className="absolute inset-0 border-2 border-red-500 border-dashed m-8 rounded-lg pointer-events-none">
                                             <div className="absolute top-2 left-2 right-2 text-center">
                                                 <span className="bg-black bg-opacity-50 text-white px-2 py-1 rounded text-sm">
-                                                    Align Code 128 barcode within the frame
+                                                    {isScanning ? 'Scanning for Code 128 barcode...' : 'Starting camera...'}
                                                 </span>
                                             </div>
                                         </div>
+                                        {isScanning && (
+                                            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+                                                <div className="bg-green-500 text-white px-3 py-1 rounded-full text-sm animate-pulse">
+                                                    Scanning...
+                                                </div>
+                                            </div>
+                                        )}
                                     </>
                                 )}
                             </div>
@@ -355,6 +463,7 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
                                     type="button"
                                     variant="outline"
                                     onClick={() => setShowCameraScanner(false)}
+                                    disabled={isScanning}
                                 >
                                     <X className="h-4 w-4 mr-2" />
                                     Close Camera
