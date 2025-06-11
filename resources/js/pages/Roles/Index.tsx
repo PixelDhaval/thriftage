@@ -130,7 +130,7 @@ export default function Index({ roles, permissions }: Props) {
                                 Add Role
                             </Button>
                         </DialogTrigger>
-                        <DialogContent>
+                        <DialogContent className='max-h-[90vh] overflow-y-auto'>
                             <DialogHeader>
                                 <DialogTitle>Create New Role</DialogTitle>
                                 <DialogDescription>Add a new role and assign permissions.</DialogDescription>
@@ -147,7 +147,7 @@ export default function Index({ roles, permissions }: Props) {
             </div>
 
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                <DialogContent>
+                <DialogContent className='max-h-[90vh] overflow-y-auto'>
                     <DialogHeader>
                         <DialogTitle>Edit Role</DialogTitle>
                         <DialogDescription>Update role details and permissions.</DialogDescription>

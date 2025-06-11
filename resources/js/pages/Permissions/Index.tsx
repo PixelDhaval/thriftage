@@ -115,7 +115,7 @@ export default function Index({ permissions }: Props) {
                                     Add Permission
                                 </Button>
                             </DialogTrigger>
-                            <DialogContent>
+                            <DialogContent className="max-h-[90vh] overflow-y-auto">
                                 <DialogHeader>
                                     <DialogTitle>Create New Permission</DialogTitle>
                                     <DialogDescription>Add a new permission to the system.</DialogDescription>
@@ -132,7 +132,7 @@ export default function Index({ permissions }: Props) {
                 <DataTable<Permission> filterableColumns={filterableColumns} route="/api/permissions"  columns={columns} pageSize={20} { ...(userPermissions.includes('permissions-update') && { onEdit: handleEdit }) } { ...(userPermissions.includes('permissions-update') && { onDelete: handleDeleteClick }) } params={{}} />
             </div>
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                <DialogContent>
+                <DialogContent className='max-h-[90vh] overflow-y-auto'>
                     <DialogHeader>
                         <DialogTitle>Edit Permission</DialogTitle>
                         <DialogDescription>Update permission details.</DialogDescription>
