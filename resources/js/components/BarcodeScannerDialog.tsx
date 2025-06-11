@@ -95,11 +95,28 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
         }
     };
 
-    // Handle camera errors
+    // Handle camera errors - filter out normal scanning errors
     const handleCameraError = (error: any) => {
+        // Check if it's a normal "no barcode detected" error
+        if (error?.name === 'NotFoundException' || 
+            error?.message?.includes('No MultiFormat Readers were able to detect the code') ||
+            error?.message?.includes('NotFoundException')) {
+            // This is normal - no barcode detected in current frame, don't show error
+            return;
+        }
+        
+        // Only log and show actual camera/permission errors
         console.error('Camera error:', error);
-        setCameraError('Unable to access camera. Please check permissions and try again.');
-        toast.error('Camera access failed. Please check permissions.');
+        if (error?.name === 'NotAllowedError' || error?.message?.includes('Permission denied')) {
+            setCameraError('Camera permission denied. Please allow camera access and try again.');
+            toast.error('Camera permission denied. Please check permissions.');
+        } else if (error?.name === 'NotFoundError' || error?.message?.includes('No camera found')) {
+            setCameraError('No camera found. Please ensure your device has a camera.');
+            toast.error('No camera found on this device.');
+        } else {
+            setCameraError('Unable to access camera. Please check permissions and try again.');
+            toast.error('Camera access failed. Please check permissions.');
+        }
     };
 
     // Focus input when dialog opens
@@ -326,7 +343,7 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
                                         <div className="absolute inset-0 border-2 border-red-500 border-dashed m-8 rounded-lg pointer-events-none">
                                             <div className="absolute top-2 left-2 right-2 text-center">
                                                 <span className="bg-black bg-opacity-50 text-white px-2 py-1 rounded text-sm">
-                                                    Align barcode within the frame
+                                                    Align Code 128 barcode within the frame
                                                 </span>
                                             </div>
                                         </div>
@@ -350,7 +367,7 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
                     {!showCameraScanner && (
                         <form onSubmit={handleBarcodeSubmit} className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="barcode">Barcode</Label>
+                                <Label htmlFor="barcode">Barcode (Code 128)</Label>
                                 <Input
                                     ref={inputRef}
                                     id="barcode"
