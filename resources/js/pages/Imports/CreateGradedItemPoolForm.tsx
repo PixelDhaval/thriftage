@@ -25,7 +25,7 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
         item_id: '',
         grade_id: '',
         weight: '',
-        graded_at: new Date(),
+        graded_at: format(new Date(), 'yyyy-MM-dd'),
     });
     const [selectedParty, setSelectedParty] = useState<any>(
         importData.type === 'local' ? { id: importData.party_id, name: importData.party?.name } : null
@@ -240,32 +240,13 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
             {/* Graded At Date */}
             <div className="grid gap-2">
                 <Label htmlFor="graded_at">Graded At *</Label>
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button
-                            variant="outline"
-                            className={cn(
-                                "w-full justify-start text-left font-normal",
-                                !formData.graded_at && "text-muted-foreground"
-                            )}
-                        >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {formData.graded_at ? (
-                                format(formData.graded_at, "dd/MM/yyyy")
-                            ) : (
-                                <span>Pick a date</span>
-                            )}
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                        <Calendar
-                            mode="single"
-                            selected={formData.graded_at}
-                            onSelect={(date) => date && handleInputChange('graded_at', date)}
-                            initialFocus
-                        />
-                    </PopoverContent>
-                </Popover>
+                <Input
+                        id="graded_at"
+                        className="w-full"
+                        type="date"
+                        value={formData.graded_at}
+                        onChange={e => setFormData('graded_at', e.target.value)}
+                    />
             </div>
 
             {/* Submit Button */}
