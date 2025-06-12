@@ -109,13 +109,8 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
         if (result && result.trim() && !scanningRef.current) {
             scanningRef.current = true;
             setBarcode(result.trim());
-            setShowCameraScanner(false);
-            setCameraError(null);
             toast.success('Barcode detected!');
             playSuccessSound();
-            
-            // Stop scanning
-            stopScanning();
             
             // Auto-submit the barcode
             setTimeout(() => {
@@ -282,16 +277,31 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
                 setPendingBarcode(barcodeToSubmit);
                 setLastScannedBag(bag);
                 playAlertSound(); // Play alert sound for confirmation
+                
+                // Stop camera scanning temporarily for confirmation dialog
+                if (showCameraScanner && isMobile) {
+                    stopScanning();
+                }
             } else if (type === 'status_changed') {
                 // Success - bag status changed and play success sound
                 toast.success(message);
                 setLastScannedBag({ ...bag, status: new_status });
                 setBarcode('');
-                focusInput();
                 playSuccessSound(); // Play success sound
                 
                 // Refresh DataTable if available
                 window.refreshDataTable?.();
+                
+                // For mobile camera scanning, restart scanning after a short delay
+                if (showCameraScanner && isMobile) {
+                    setTimeout(() => {
+                        if (showCameraScanner && isOpen) {
+                            startScanning();
+                        }
+                    }, 1000);
+                } else {
+                    focusInput();
+                }
             }
 
         } catch (error: any) {
@@ -305,7 +315,17 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
             }
             
             setBarcode('');
-            focusInput();
+            
+            // For mobile camera scanning, restart scanning after error
+            if (showCameraScanner && isMobile) {
+                setTimeout(() => {
+                    if (showCameraScanner && isOpen) {
+                        startScanning();
+                    }
+                }, 1000);
+            } else {
+                focusInput();
+            }
         } finally {
             setIsProcessing(false);
         }
@@ -345,7 +365,17 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
             setShowConfirmDialog(false);
             setPendingBarcode('');
             setBarcode('');
-            focusInput();
+            
+            // For mobile camera scanning, restart scanning after confirmation
+            if (showCameraScanner && isMobile) {
+                setTimeout(() => {
+                    if (showCameraScanner && isOpen) {
+                        startScanning();
+                    }
+                }, 500);
+            } else {
+                focusInput();
+            }
         }
     };
 
@@ -353,7 +383,17 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
         setShowConfirmDialog(false);
         setPendingBarcode('');
         setBarcode('');
-        focusInput();
+        
+        // For mobile camera scanning, restart scanning after cancellation
+        if (showCameraScanner && isMobile) {
+            setTimeout(() => {
+                if (showCameraScanner && isOpen) {
+                    startScanning();
+                }
+            }, 500);
+        } else {
+            focusInput();
+        }
     };
 
     const handleDialogClose = () => {
@@ -366,7 +406,6 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
         stopScanning();
         onClose();
     };
-
 
     return (
         <>
@@ -444,26 +483,38 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
                                         <div className="absolute inset-0 border-2 border-red-500 border-dashed m-8 rounded-lg pointer-events-none">
                                             <div className="absolute top-2 left-2 right-2 text-center">
                                                 <span className="bg-black bg-opacity-50 text-white px-2 py-1 rounded text-sm">
-                                                    {isScanning ? 'Scanning for Code 128 barcode...' : 'Starting camera...'}
+                                                    {isProcessing ? 'Processing barcode...' : 
+                                                     isScanning ? 'Scanning for Code 128 barcode...' : 
+                                                     'Starting camera...'}
                                                 </span>
                                             </div>
                                         </div>
-                                        {isScanning && (
+                                        {isScanning && !isProcessing && (
                                             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
                                                 <div className="bg-green-500 text-white px-3 py-1 rounded-full text-sm animate-pulse">
-                                                    Scanning...
+                                                    Ready to scan...
+                                                </div>
+                                            </div>
+                                        )}
+                                        {isProcessing && (
+                                            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+                                                <div className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm">
+                                                    Processing...
                                                 </div>
                                             </div>
                                         )}
                                     </>
                                 )}
                             </div>
-                            <div className="flex justify-end">
+                            <div className="flex justify-between items-center">
+                                <div className="text-sm text-muted-foreground">
+                                    {isMobile ? 'Point camera at barcode to scan automatically' : 'Camera scanning enabled'}
+                                </div>
                                 <Button
                                     type="button"
                                     variant="outline"
                                     onClick={() => setShowCameraScanner(false)}
-                                    disabled={isScanning}
+                                    disabled={isScanning && isProcessing}
                                 >
                                     <X className="h-4 w-4 mr-2" />
                                     Close Camera
@@ -551,6 +602,7 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
                         </DialogTitle>
                         <DialogDescription>
                             This bag is already marked as opened. Do you want to change the status to unopened?
+                            {isMobile && ' Camera scanning will resume after this action.'}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -582,7 +634,7 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
                             {isProcessing ? 'Updating...' : 'Change to Unopened'}
                         </Button>
                         <Button variant="outline" onClick={handleCancelToggle} disabled={isProcessing}>
-                            Cancel
+                            {isMobile ? 'Cancel & Resume Scanning' : 'Cancel'}
                         </Button>
                         
                     </div>
