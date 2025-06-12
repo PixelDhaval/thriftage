@@ -17,9 +17,6 @@ class GradedBagsPool extends Model
             if (empty($model->barcode)) {
                 $model->barcode = self::generateBarcode();
             }
-            if (empty($model->status)) {
-                $model->status = 'unopened';
-            }
         });
     }
 

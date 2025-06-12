@@ -364,7 +364,6 @@ class GradedBagsPoolController extends Controller
 
             switch ($sortColumn) {
                 case 'barcode':
-                case 'status':
                 case 'created_at':
                     $query->orderBy($sortColumn, $sortDirection);
                     break;
@@ -397,9 +396,6 @@ class GradedBagsPoolController extends Controller
                 switch ($searchColumn) {
                     case 'barcode':
                         $query->where('barcode', 'like', "%{$searchTerm}%");
-                        break;
-                    case 'status':
-                        $query->where('status', 'like', "%{$searchTerm}%");
                         break;
                     case 'created_at':
                         $query->whereDate('created_at', $searchTerm);
@@ -447,91 +443,5 @@ class GradedBagsPoolController extends Controller
         }
 
         return response()->json($results);
-    }
-
-    public function updateByBarcode(Request $request)
-    {
-        $user = Auth::user();
-        if (!$user->hasPermission('graded-bags-pools-update')) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
-
-        $request->validate([
-            'barcode' => 'required|string',
-        ]);
-
-        $barcode = $request->input('barcode');
-
-        // Find the graded bag by barcode
-        $gradedBag = GradedBagsPool::where('barcode', $barcode)
-            ->with(['weight', 'item.section', 'grade'])
-            ->first();
-
-        if (!$gradedBag) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Graded bag not found with barcode: ' . $barcode,
-                'type' => 'not_found'
-            ], 404);
-        }
-
-        // Check current status and toggle
-        if ($gradedBag->status === 'opened') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Graded bag is already opened. Do you want to change status to unopened?',
-                'type' => 'already_opened',
-                'bag' => $gradedBag
-            ], 200);
-        } else {
-            // Change from unopened to opened
-            $gradedBag->update(['status' => 'opened']);
-
-            return response()->json([
-                'success' => true,
-                'message' => "Graded bag {$barcode} marked as opened successfully.",
-                'type' => 'status_changed',
-                'bag' => $gradedBag,
-                'new_status' => 'opened'
-            ]);
-        }
-    }
-
-    public function toggleStatusByBarcode(Request $request)
-    {
-        $user = Auth::user();
-        if (!$user->hasPermission('graded-bags-pools-update')) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
-
-        $request->validate([
-            'barcode' => 'required|string',
-            'new_status' => 'required|in:opened,unopened',
-        ]);
-
-        $barcode = $request->input('barcode');
-        $newStatus = $request->input('new_status');
-
-        $gradedBag = GradedBagsPool::where('barcode', $barcode)
-            ->with(['weight', 'item.section', 'grade'])
-            ->first();
-
-        if (!$gradedBag) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Graded bag not found with barcode: ' . $barcode,
-                'type' => 'not_found'
-            ], 404);
-        }
-
-        $gradedBag->update(['status' => $newStatus]);
-
-        return response()->json([
-            'success' => true,
-            'message' => "Graded bag {$barcode} marked as {$newStatus} successfully.",
-            'type' => 'status_changed',
-            'bag' => $gradedBag,
-            'new_status' => $newStatus
-        ]);
     }
 }
