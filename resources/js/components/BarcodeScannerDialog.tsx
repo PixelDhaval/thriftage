@@ -23,6 +23,8 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
     const [showCameraScanner, setShowCameraScanner] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
     const [isScanning, setIsScanning] = useState(false);
+    const [lastProcessedBarcode, setLastProcessedBarcode] = useState<string>('');
+    const [barcodeProcessTimeout, setBarcodeProcessTimeout] = useState<NodeJS.Timeout | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const readerRef = useRef<BrowserMultiFormatReader | null>(null);
@@ -107,14 +109,22 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
     // Handle barcode detection from camera
     const handleBarcodeDetected = (result: string) => {
         if (result && result.trim() && !scanningRef.current) {
+            const detectedBarcode = result.trim();
+            
+            // Check if this is the same barcode as the last processed one
+            if (detectedBarcode === lastProcessedBarcode) {
+                console.log('Ignoring duplicate barcode:', detectedBarcode);
+                return;
+            }
+
             scanningRef.current = true;
-            setBarcode(result.trim());
+            setBarcode(detectedBarcode);
             toast.success('Barcode detected!');
             playSuccessSound();
             
             // Auto-submit the barcode
             setTimeout(() => {
-                handleBarcodeSubmit(null, result.trim());
+                handleBarcodeSubmit(null, detectedBarcode);
                 scanningRef.current = false;
             }, 500);
         }
@@ -255,6 +265,22 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
             return;
         }
 
+        // Check if this is the same barcode as the last processed one
+        if (barcodeToSubmit === lastProcessedBarcode) {
+            toast.info('Same barcode already processed recently');
+            setBarcode('');
+            if (showCameraScanner && isMobile) {
+                setTimeout(() => {
+                    if (showCameraScanner && isOpen) {
+                        startScanning();
+                    }
+                }, 500);
+            } else {
+                focusInput();
+            }
+            return;
+        }
+
         setIsProcessing(true);
 
         try {
@@ -270,6 +296,18 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
             );
 
             const { success, message, type, bag, new_status } = response.data;
+
+            // Set the last processed barcode to prevent duplicates
+            setLastProcessedBarcode(barcodeToSubmit);
+            
+            // Clear the last processed barcode after 3 seconds to allow re-scanning if needed
+            if (barcodeProcessTimeout) {
+                clearTimeout(barcodeProcessTimeout);
+            }
+            const timeout = setTimeout(() => {
+                setLastProcessedBarcode('');
+            }, 3000);
+            setBarcodeProcessTimeout(timeout);
 
             if (type === 'already_opened') {
                 // Show confirmation dialog for already opened bag and play alert sound
@@ -306,6 +344,8 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
 
         } catch (error: any) {
             console.error('Error scanning barcode:', error);
+            
+            // Don't set last processed barcode for failed scans
             
             if (error.response?.status === 404) {
                 toast.error(error.response.data.message || 'Bag not found');
@@ -403,9 +443,42 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
         setPendingBarcode('');
         setShowCameraScanner(false);
         setCameraError(null);
+        setLastProcessedBarcode('');
+        
+        // Clear timeout when dialog closes
+        if (barcodeProcessTimeout) {
+            clearTimeout(barcodeProcessTimeout);
+            setBarcodeProcessTimeout(null);
+        }
+        
         stopScanning();
         onClose();
     };
+
+    // Clean up timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (barcodeProcessTimeout) {
+                clearTimeout(barcodeProcessTimeout);
+            }
+        };
+    }, [barcodeProcessTimeout]);
+
+    // Focus input when dialog opens
+    useEffect(() => {
+        if (isOpen && inputRef.current && !showCameraScanner) {
+            setTimeout(() => {
+                inputRef.current?.focus();
+            }, 100);
+        }
+    }, [isOpen, showCameraScanner]);
+
+    // Reset camera error when scanner is closed
+    useEffect(() => {
+        if (!showCameraScanner) {
+            setCameraError(null);
+        }
+    }, [showCameraScanner]);
 
     return (
         <>
@@ -556,6 +629,11 @@ export default function BarcodeScannerDialog({ isOpen, onClose }: Props) {
                             <div className="flex items-center gap-2 mb-2">
                                 <Package className="h-4 w-4" />
                                 <span className="font-medium">Last Scanned Bag</span>
+                                {lastProcessedBarcode && (
+                                    <span className="text-xs text-muted-foreground">
+                                        (Duplicate protection: 3s)
+                                    </span>
+                                )}
                             </div>
                             <div className="space-y-1 text-sm">
                                 <div>
