@@ -197,7 +197,6 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
                     placeholder="Select item"
                     renderOption={(option) => `${option.name} - ${option.section?.name || 'No Section'}`}
                     renderSelected={(option) => option.name}
-                    required
                 />
             </div>
 
