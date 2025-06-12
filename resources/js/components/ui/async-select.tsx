@@ -160,7 +160,6 @@ export function AsyncSelectInput({
     }),
     container: (base: any) => ({
       ...base,
-      zIndex: 99999,
       position: 'relative',
       isolation: 'isolate',
     }),

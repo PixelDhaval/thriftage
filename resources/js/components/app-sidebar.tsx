@@ -29,6 +29,12 @@ const baseNavItems: (NavItem & { requiredPermissions?: string[] })[] = [
         requiredPermissions: ['bags-opening-read'],
     },
     {
+        title: 'Graded Bags',
+        href: '/graded-bags-pools',
+        icon: BookOpen,
+        requiredPermissions: ['graded-bags-pools-read'],
+    },
+    {
         title: 'Master',
         href: '#',
         icon: BookOpen,

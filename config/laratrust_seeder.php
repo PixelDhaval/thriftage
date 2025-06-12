@@ -20,6 +20,8 @@ return [
             'imports' => 'c,r,u,d',
             'import-bags' => 'c,r,u,d',
             'bags-opening' => 'r,u',
+            'graded-bags-pools' => 'c,r,u,d',
+            'graded-items-pools' => 'c,r,u,d',
         ],
         'owner' => [
             'users' => 'r,u',

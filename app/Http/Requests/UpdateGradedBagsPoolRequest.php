@@ -12,7 +12,7 @@ class UpdateGradedBagsPoolRequest extends FormRequest
      */
     public function authorize(): bool
     {
-    if (Auth::user()->hasPermission('graded-bags-pool-update')) {
+    if (Auth::user()->hasPermission('graded-bags-pools-update')) {
             return true;
         }
         return false;
@@ -26,12 +26,9 @@ class UpdateGradedBagsPoolRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'party_id' => 'required|exists:parties,id',
-            'import_id' => 'required|exists:imports,id',
             'weight_id' => 'required|exists:weights,id',
             'item_id' => 'required|exists:items,id',
             'grade_id' => 'required|exists:grades,id',
-            'barcode' => 'nullable|string|max:255'
         ];
     }
 }

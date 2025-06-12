@@ -159,7 +159,6 @@
 /* Ensure AsyncSelect portal is always on top */
 #react-select-portal-container {
     position: relative;
-    z-index: 99999;
     isolation: isolate;
 }
 

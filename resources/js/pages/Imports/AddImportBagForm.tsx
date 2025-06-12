@@ -291,7 +291,7 @@ export default function AddImportBagForm({ importData, onSuccess }: Props) {
                         type="number"
                         min="1"
                         value={data.quantity}
-                        onChange={e => setData('quantity', parseInt(e.target.value) || 1)}
+                        onChange={e => setData('quantity', parseInt(e.target.value))}
                         placeholder="Enter quantity"
                         required
                     />

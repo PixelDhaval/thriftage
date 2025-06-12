@@ -7,7 +7,7 @@ use Carbon\Carbon;
 
 class GradedBagsPool extends Model
 {
-    protected $fillable = ['party_id', 'import_id', 'weight_id', 'item_id', 'grade_id', 'barcode'];
+    protected $fillable = ['weight_id', 'item_id', 'grade_id', 'barcode', 'status'];
 
     protected static function boot()
     {
@@ -17,17 +17,10 @@ class GradedBagsPool extends Model
             if (empty($model->barcode)) {
                 $model->barcode = self::generateBarcode();
             }
+            if (empty($model->status)) {
+                $model->status = 'unopened';
+            }
         });
-    }
-
-    public function party()
-    {
-        return $this->belongsTo(Party::class);
-    }
-
-    public function import()
-    {
-        return $this->belongsTo(Import::class);
     }
 
     public function weight()

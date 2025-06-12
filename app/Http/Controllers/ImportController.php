@@ -9,6 +9,7 @@ use App\Models\Import;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
 
 class ImportController extends Controller
 {
@@ -169,5 +170,83 @@ class ImportController extends Controller
             'success' => true,
             'message' => 'Import deleted successfully.'
         ]);
+    }
+
+    public function getImportStats(Import $import)
+    {
+        $user = Auth::user();
+        if (!$user->hasPermission('imports-read')) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $stats = [
+            'total_bags' => $import->bags()->count(),
+            'opened_bags' => $import->bags()->where('status', 'opened')->count(),
+            'unopened_bags' => $import->bags()->where('status', 'unopened')->count(),
+        ];
+
+        return response()->json($stats);
+    }
+
+    public function getAvailableOpenedGoods(Import $import)
+    {
+        $user = Auth::user();
+        if (!$user->hasPermission('imports-read')) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // Get opened bags weight by party and weight
+        $openedBagsWeight = $import->bags()
+            ->where('status', 'opened')
+            ->join('weights', 'import_bags.weight_id', '=', 'weights.id')
+            ->selectRaw('import_bags.party_id, import_bags.weight_id, SUM(weights.weight) as total_opened_weight')
+            ->groupBy('import_bags.party_id', 'import_bags.weight_id')
+            ->get();
+
+        // Get graded items weight by party (sum all weights from graded_items_pools)
+        $gradedItemsWeight = DB::table('graded_items_pools')
+            ->where('import_id', $import->id)
+            ->selectRaw('party_id, SUM(weight) as total_graded_weight')
+            ->groupBy('party_id')
+            ->get();
+
+        // Calculate available weight by party
+        $availableGoods = [];
+        
+        // Group opened bags by party to get total opened weight per party
+        $partyOpenedWeights = [];
+        foreach ($openedBagsWeight as $openedItem) {
+            if (!isset($partyOpenedWeights[$openedItem->party_id])) {
+                $partyOpenedWeights[$openedItem->party_id] = 0;
+            }
+            $partyOpenedWeights[$openedItem->party_id] += $openedItem->total_opened_weight;
+        }
+
+        // Calculate available weight for each party
+        foreach ($partyOpenedWeights as $partyId => $totalOpenedWeight) {
+            $gradedWeight = $gradedItemsWeight
+                ->where('party_id', $partyId)
+                ->first();
+            
+            $gradedWeightTotal = $gradedWeight ? $gradedWeight->total_graded_weight : 0;
+            $availableWeight = $totalOpenedWeight - $gradedWeightTotal;
+            
+            if ($availableWeight > 0) {
+                $availableGoods[] = [
+                    'party_id' => $partyId,
+                    'opened_weight' => $totalOpenedWeight,
+                    'graded_weight' => $gradedWeightTotal,
+                    'available_weight' => $availableWeight,
+                ];
+            }
+        }
+
+        // Load party relationships
+        foreach ($availableGoods as $key => $item) {
+            $party = \App\Models\Party::find($item['party_id']);
+            $availableGoods[$key]['party'] = $party;
+        }
+
+        return response()->json($availableGoods);
     }
 }

@@ -11,12 +11,13 @@ import { type BreadcrumbItem, type Import, type ImportBag } from '@/types';
 import { printBarcodes } from '@/utils/printBarcodes';
 import { Head } from '@inertiajs/react';
 import axios from 'axios';
-import { Edit, Plus, Printer } from 'lucide-react';
+import { Edit, Package, Plus, Printer } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import AddImportBagForm from './AddImportBagForm';
 import EditImportForm from './EditImportForm';
 import ImportBagsWithBarcodesDialog from './ImportBagsWithBarcodesDialog';
+import CreateGradedItemPoolForm from './CreateGradedItemPoolForm';
 import { format } from 'date-fns';
 
 interface Props {
@@ -34,6 +35,19 @@ export default function Show({ import: importData }: Props) {
         weightId: number;
         partyName: string;
         weightValue: string;
+    } | null>(null);
+    const [isAddGradedBagDialogOpen, setIsAddGradedBagDialogOpen] = useState(false);
+    const [isGradedBarcodesDialogOpen, setIsGradedBarcodesDialogOpen] = useState(false);
+    const [selectedGradedBagGroup, setSelectedGradedBagGroup] = useState<{
+        importId: number;
+        partyId: number;
+        weightId: number;
+        itemId: number;
+        gradeId: number;
+        partyName: string;
+        weightValue: string;
+        itemName: string;
+        gradeName: string;
     } | null>(null);
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -55,20 +69,25 @@ export default function Show({ import: importData }: Props) {
     });
     const [selectedPartyFilter, setSelectedPartyFilter] = useState<any>(null);
     const [weights, setWeights] = useState<any[]>([]);
+    const [importStats, setImportStats] = useState<any>(null);
 
-    // Fetch weights on component mount
+    // Fetch weights, stats and available goods on component mount
     useEffect(() => {
-        const fetchWeights = async () => {
+        const fetchData = async () => {
             try {
-                const response = await axios.get('/api/weights');
-                setWeights(response.data);
+                const [weightsResponse, statsResponse] = await Promise.all([
+                    axios.get('/api/weights'),
+                    axios.get(`/api/imports/${importData.id}/stats`),
+                ]);
+                setWeights(weightsResponse.data);
+                setImportStats(statsResponse.data);
             } catch (error) {
-                console.error('Error fetching weights:', error);
+                console.error('Error fetching data:', error);
             }
         };
 
-        fetchWeights();
-    }, []);
+        fetchData();
+    }, [importData.id]);
 
     // Handle party filter change
     const handlePartyFilterChange = (selected: any) => {
@@ -161,6 +180,7 @@ export default function Show({ import: importData }: Props) {
             toast.error('Failed to print barcode.');
         }
     };
+
 
     // DataTable configurations for import bags
     const importBagFilterableColumns = [
@@ -344,6 +364,85 @@ export default function Show({ import: importData }: Props) {
         },
     ];
 
+    // DataTable configurations for graded items pools
+    const gradedItemsFilterableColumns = [
+        { label: 'Party', key: 'party.name' },
+        { label: 'Item', key: 'item.name' },
+        { label: 'Grade', key: 'grade.name' },
+        { label: 'Weight', key: 'weight' },
+        { label: 'Graded At', key: 'graded_at' },
+    ];
+
+    const gradedItemsColumns = [
+        ...(importData.type === 'container'
+            ? [
+                  {
+                      id: 'party',
+                      header: 'Party',
+                      enableSorting: true,
+                      cell: ({ row }: { row: any }) => (
+                          <div className="flex items-center gap-2">
+                              <span>{row.original.party?.name || '-'}</span>
+                          </div>
+                      ),
+                  },
+              ]
+            : []),
+        {
+            id: 'item',
+            header: 'Item',
+            enableSorting: true,
+            cell: ({ row }: { row: any }) => (
+                <div className="flex items-center gap-2">
+                    <span>{row.original.item?.name || '-'}</span>
+                    <span className="text-xs text-muted-foreground">
+                        ({row.original.item?.section?.name || 'No Section'})
+                    </span>
+                </div>
+            ),
+        },
+        {
+            id: 'grade',
+            header: 'Grade',
+            enableSorting: true,
+            cell: ({ row }: { row: any }) => (
+                <div className="flex items-center gap-2">
+                    <span>{row.original.grade?.name || '-'}</span>
+                </div>
+            ),
+        },
+        {
+            id: 'weight',
+            header: 'Weight',
+            enableSorting: true,
+            cell: ({ row }: { row: any }) => (
+                <div className="flex items-center gap-2">
+                    <span className="font-semibold">{row.original.weight} kg</span>
+                </div>
+            ),
+        },
+        {
+            id: 'graded_at',
+            header: 'Graded At',
+            enableSorting: true,
+            cell: ({ row }: { row: any }) => (
+                <div className="flex items-center gap-2">
+                    <span>{format(new Date(row.original.graded_at), 'dd/MM/yyyy')}</span>
+                </div>
+            ),
+        },
+        {
+            id: 'created_at',
+            header: 'Created At',
+            enableSorting: true,
+            cell: ({ row }: { row: any }) => (
+                <div className="flex items-center gap-2">
+                    <span>{format(new Date(row.original.created_at), 'dd/MM/yyyy HH:mm')}</span>
+                </div>
+            ),
+        },
+    ];
+
     // Import Bags with Barcodes Dialog
 
     return (
@@ -441,11 +540,68 @@ export default function Show({ import: importData }: Props) {
                     </CardContent>
                 </Card>
 
+                {/* Statistics Cards */}
+                {importStats && (
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                        <Card>
+                            <CardContent className="p-4">
+                                <div className="flex items-center gap-2">
+                                    <Package className="h-5 w-5 text-blue-600" />
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Total Bags</p>
+                                        <p className="text-2xl font-bold">{importStats.total_bags}</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardContent className="p-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="h-5 w-5 rounded bg-green-600" />
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Opened Bags</p>
+                                        <p className="text-2xl font-bold text-green-600">{importStats.opened_bags}</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardContent className="p-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="h-5 w-5 rounded bg-red-600" />
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Unopened Bags</p>
+                                        <p className="text-2xl font-bold text-red-600">{importStats.unopened_bags}</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardContent className="p-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="h-5 w-5 rounded bg-amber-600" />
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Opening Progress</p>
+                                        <p className="text-2xl font-bold text-amber-600">
+                                            {importStats.total_bags > 0 ? Math.round((importStats.opened_bags / importStats.total_bags) * 100) : 0}%
+                                        </p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
+
+               
                 {/* Tabs Section */}
                 <Tabs defaultValue="bags" className="w-full">
                     <TabsList>
                         <TabsTrigger value="bags">Import Bags</TabsTrigger>
                         <TabsTrigger value="barcode-bags">Barcode wise Bags</TabsTrigger>
+                        <TabsTrigger value="grading">Graded Items Pool</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="bags">
@@ -577,7 +733,47 @@ export default function Show({ import: importData }: Props) {
                             </CardContent>
                         </Card>
                     </TabsContent>
+
+                    <TabsContent value="grading">
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <CardTitle>Graded Items Pool</CardTitle>
+                                <Dialog open={isAddGradedBagDialogOpen} onOpenChange={setIsAddGradedBagDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button>
+                                            <Plus className="mr-2 h-4 w-4" />
+                                            Add Graded Item
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-md">
+                                        <DialogHeader>
+                                            <DialogTitle>Add Graded Item Pool</DialogTitle>
+                                            <DialogDescription>Add graded item to this import.</DialogDescription>
+                                        </DialogHeader>
+                                        <CreateGradedItemPoolForm
+                                            importData={importData}
+                                            onSuccess={() => {
+                                                setIsAddGradedBagDialogOpen(false);
+                                                window.refreshDataTable?.();
+                                            }}
+                                        />
+                                    </DialogContent>
+                                </Dialog>
+                            </CardHeader>
+                            <CardContent>
+                                <DataTable
+                                    filterableColumns={gradedItemsFilterableColumns}
+                                    route="/api/graded-items-pools"
+                                    columns={gradedItemsColumns}
+                                    pageSize={20}
+                                    params={{ import_id: importData.id }}
+                                />
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
                 </Tabs>
+
+                {/* Existing dialogs */}
                 {selectedBagGroup && (
                     <ImportBagsWithBarcodesDialog
                         isOpen={isBarcodesDialogOpen}
@@ -595,4 +791,5 @@ export default function Show({ import: importData }: Props) {
             </div>
         </AppLayout>
     );
+
 }

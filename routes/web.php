@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\GradeController;
+use App\Http\Controllers\GradedBagsPoolController;
+use App\Http\Controllers\GradedItemsPoolController;
 use App\Http\Controllers\ImportBagController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\ItemController;
@@ -14,6 +16,7 @@ use App\Http\Controllers\SectionController;
 use App\Http\Controllers\UserRolePermissionController;
 use App\Http\Controllers\WeightController;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\GradedStockController;
 
 Route::get('/', function () {
     return Inertia::render('welcome');
@@ -84,6 +87,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('/api/import-bags/scan', [ImportBagController::class, 'updateByBarcode']);
     Route::post('/api/import-bags/toggle-status', [ImportBagController::class, 'toggleStatusByBarcode']);
+
+    Route::resource('graded-bags-pools', GradedBagsPoolController::class);
+    Route::get('/api/graded-bags-pools', [GradedBagsPoolController::class, 'getGradedBagsPools'])->name('api.graded-bags-pools.index');
+    Route::get('/api/graded-bags-pools/select', [GradedBagsPoolController::class, 'getGradedBagsPoolsForSelect'])->name('api.graded-bags-pools.select');
+    Route::get('/api/graded-bags-pools-with-barcodes', [GradedBagsPoolController::class, 'getGradedBagsPoolsWithBarcodes']);
+    Route::post('/api/graded-bags-pools/batch', [GradedBagsPoolController::class, 'storeBatch'])->name('graded-bags-pools.batch');
+
+    // Import routes
+    Route::get('/api/imports/{import}/stats', [ImportController::class, 'getImportStats'])->name('imports.stats');
+    Route::get('/api/imports/{import}/available-opened-goods', [ImportController::class, 'getAvailableOpenedGoods'])->name('imports.available-opened-goods');
+
+    Route::resource('graded-items-pools', GradedItemsPoolController::class);
+    Route::get('/api/graded-items-pools', [GradedItemsPoolController::class, 'getGradedItemsPools'])->name('api.graded-items-pools.index');
+    Route::get('/api/graded-items-pools/select', [GradedItemsPoolController::class, 'getGradedItemsPoolsForSelect'])->name('api.graded-items-pools.select');
+
+    Route::get('/api/graded-stock/available', [GradedStockController::class, 'getAvailableStock']);
+    Route::post('/api/graded-stock/check-availability', [GradedStockController::class, 'checkAvailability']);
+
 });
 
 
