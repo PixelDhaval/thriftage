@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { CalendarInput } from '@/components/ui/calendar-input';
 
 interface Props {
     importData: any;
@@ -25,7 +26,7 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
         item_id: '',
         grade_id: '',
         weight: '',
-        graded_at: format(new Date(), 'yyyy-MM-dd'),
+        graded_at: new Date(),
     });
     const [selectedParty, setSelectedParty] = useState<any>(
         importData.type === 'local' ? { id: importData.party_id, name: importData.party?.name } : null
@@ -197,6 +198,7 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
                     placeholder="Select item"
                     renderOption={(option) => `${option.name} - ${option.section?.name || 'No Section'}`}
                     renderSelected={(option) => option.name}
+                    required
                 />
             </div>
 
@@ -239,13 +241,11 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
             {/* Graded At Date */}
             <div className="grid gap-2">
                 <Label htmlFor="graded_at">Graded At *</Label>
-                <Input
-                        id="graded_at"
-                        className="w-full"
-                        type="date"
-                        value={formData.graded_at}
-                        onChange={e => setFormData('graded_at', e.target.value)}
-                    />
+                <CalendarInput
+                    id='graded_at'
+                    value={formData.graded_at}
+                    onChange={(e) => handleInputChange('graded_at', e.target.value)}
+                 />
             </div>
 
             {/* Submit Button */}
