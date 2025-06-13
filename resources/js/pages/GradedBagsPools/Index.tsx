@@ -1,5 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
@@ -34,6 +36,28 @@ export default function Index() {
         weightValue: string;
         totalQuantity: number;
     } | null>(null);
+
+    // Get today's date in YYYY-MM-DD format
+    const today = format(new Date(), 'yyyy-MM-dd');
+    
+    // State for date range parameters
+    const [dateParams, setDateParams] = useState({
+        from_created_date: today,
+        to_created_date: today,
+    });
+
+    // Handle date range changes
+    const handleDateRangeChange = (field: string, value: string) => {
+        setDateParams(prev => ({ ...prev, [field]: value }));
+    };
+
+    // Reset date range to today
+    const resetDateRange = () => {
+        setDateParams({
+            from_created_date: today,
+            to_created_date: today,
+        });
+    };
 
     // Keyboard shortcut for opening create dialog
     useEffect(() => {
@@ -226,7 +250,7 @@ export default function Index() {
             id: 'total_weight',
             header: 'Total Weight',
             enableSorting: false,
-            cell: ({ row }: { row: any }) => (
+            cell: ({row }: { row: any }) => (
                 <div className="flex items-center gap-2">
                     <span className="font-semibold">
                         {(row.original.total_quantity * parseFloat(row.original.weight?.weight || '0')).toFixed(2)} kg
@@ -272,12 +296,56 @@ export default function Index() {
                         <TabsTrigger value="grouped">Grouped Summary</TabsTrigger>
                     </TabsList>
 
+                    {/* Date Range Filter Section */}
+                    <div className="bg-muted/50 mb-6 grid grid-cols-1 gap-4 rounded-lg p-4 md:grid-cols-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="from-date">From Date</Label>
+                            <Input
+                                id="from-date"
+                                type="date"
+                                value={dateParams.from_created_date}
+                                onChange={(e) => handleDateRangeChange('from_created_date', e.target.value)}
+                                className="w-full"
+                            />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="to-date">To Date</Label>
+                            <Input
+                                id="to-date"
+                                type="date"
+                                value={dateParams.to_created_date}
+                                onChange={(e) => handleDateRangeChange('to_created_date', e.target.value)}
+                                className="w-full"
+                            />
+                        </div>
+
+                        <div className="flex items-end gap-2">
+                            <Button 
+                                variant="outline" 
+                                onClick={resetDateRange} 
+                                className="h-10"
+                                title="Reset to today's date"
+                            >
+                                Reset to Today
+                            </Button>
+                        </div>
+
+                        <div className="flex items-end justify-end">
+                            <div className="text-sm text-muted-foreground">
+                                Showing data from {format(new Date(dateParams.from_created_date), 'dd/MM/yyyy')} to {format(new Date(dateParams.to_created_date), 'dd/MM/yyyy')}
+                            </div>
+                        </div>
+                    </div>
+
                     <TabsContent value="barcodes">
                         <DataTable
                             filterableColumns={barcodesFilterableColumns}
                             route="/api/graded-bags-pools-with-barcodes"
                             columns={barcodesColumns}
                             pageSize={20}
+                            params={dateParams}
+                            key={`barcodes-${dateParams.from_created_date}-${dateParams.to_created_date}`}
                         />
                     </TabsContent>
 
@@ -288,6 +356,8 @@ export default function Index() {
                             columns={groupedColumns}
                             pageSize={20}
                             onEdit={handleGroupDetailClick}
+                            params={dateParams}
+                            key={`grouped-${dateParams.from_created_date}-${dateParams.to_created_date}`}
                         />
                     </TabsContent>
                 </Tabs>

@@ -24,15 +24,20 @@ class GradedBagsPoolController extends Controller
 
     public function getGradedBagsPools(Request $request)
     {
-        $query = GradedBagsPool::with(['weight', 'item.section', 'grade'])
-            ->select([
-                'item_id',
-                'grade_id', 
-                'weight_id',
-                DB::raw('DATE(created_at) as created_date'),
-                DB::raw('COUNT(*) as total_quantity')
-            ])
-            ->groupBy('item_id', 'grade_id', 'weight_id', DB::raw('DATE(created_at)'));
+        $query = GradedBagsPool::with(['weight', 'item.section', 'grade']);
+        if ($request->has('from_created_date') && $request->filled('from_created_date')) {
+            $query->whereDate('created_at', '>=', $request->input('from_created_date'));
+        }
+        if ($request->has('to_created_date') && $request->filled('to_created_date')) {
+            $query->whereDate('created_at', '<=', $request->input('to_created_date'));
+        }
+        $query->select([
+            'item_id',
+            'grade_id',
+            'weight_id',
+            DB::raw('DATE(created_at) as created_date'),
+            DB::raw('COUNT(*) as total_quantity')
+        ])->groupBy('item_id', 'grade_id', 'weight_id', DB::raw('DATE(created_at)'));
 
         // Handle search
         if ($request->has('search') && $request->filled('search')) {
@@ -69,12 +74,12 @@ class GradedBagsPoolController extends Controller
                     $q->whereHas('item', function ($q) use ($searchTerm) {
                         $q->where('name', 'like', "%{$searchTerm}%");
                     })
-                    ->orWhereHas('grade', function ($q) use ($searchTerm) {
-                        $q->where('name', 'like', "%{$searchTerm}%");
-                    })
-                    ->orWhereHas('weight', function ($q) use ($searchTerm) {
-                        $q->where('weight', 'like', "%{$searchTerm}%");
-                    });
+                        ->orWhereHas('grade', function ($q) use ($searchTerm) {
+                            $q->where('name', 'like', "%{$searchTerm}%");
+                        })
+                        ->orWhereHas('weight', function ($q) use ($searchTerm) {
+                            $q->where('weight', 'like', "%{$searchTerm}%");
+                        });
                 });
             }
         }
@@ -109,7 +114,7 @@ class GradedBagsPoolController extends Controller
             }
         } else {
             $query->orderBy(DB::raw('DATE(created_at)'), 'desc')
-                  ->orderBy('total_quantity', 'desc');
+                ->orderBy('total_quantity', 'desc');
         }
 
         // Handle pagination
@@ -225,16 +230,6 @@ class GradedBagsPoolController extends Controller
                 ]);
                 $graded_bags_pools[] = $graded_bags_pool->load(['item.section', 'grade', 'weight']);
             }
-
-            // Deduct from graded stock
-            $gradedStock = \App\Models\GradedStock::where('item_id', $request->input('item_id'))
-                ->where('grade_id', $request->input('grade_id'))
-                ->first();
-
-            if ($gradedStock) {
-                $gradedStock->weight -= $requiredWeight;
-                $gradedStock->save();
-            }
         });
 
         return response()->json([
@@ -284,16 +279,6 @@ class GradedBagsPoolController extends Controller
                     'weight_id' => $request->input('weight_id'),
                 ]);
                 $graded_bags_pools[] = $graded_bags_pool->load(['item.section', 'grade', 'weight']);
-            }
-
-            // Deduct from graded stock
-            $gradedStock = \App\Models\GradedStock::where('item_id', $request->input('item_id'))
-                ->where('grade_id', $request->input('grade_id'))
-                ->first();
-
-            if ($gradedStock) {
-                $gradedStock->weight -= $requiredWeight;
-                $gradedStock->save();
             }
         });
 
@@ -356,7 +341,14 @@ class GradedBagsPoolController extends Controller
             $query->whereDate('created_at', $request->input('created_date'));
         }
 
+        // Filter by created_date
+        if ($request->has('from_created_date') && $request->filled('from_created_date')) {
+            $query->whereDate('created_at', '>=', $request->input('from_created_date'));
+        }
 
+        if ($request->has('to_created_date') && $request->filled('to_created_date')) {
+            $query->whereDate('created_at', '<=', $request->input('to_created_date'));
+        }
         // Handle sorting
         if ($request->has('sort_column') && $request->filled('sort_column')) {
             $sortColumn = $request->input('sort_column');
