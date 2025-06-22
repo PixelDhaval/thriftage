@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('party_id')->constrained('parties')->onDelete('cascade');
             $table->foreignId('import_id')->constrained('imports')->onDelete('cascade');
-            $table->foreignId('item_id')->constrained('items')->onDelete('cascade');
+            $table->foreignId('section_id')->constrained('sections')->onDelete('cascade');
             $table->foreignId('grade_id')->constrained('grades')->onDelete('cascade');
             $table->date('graded_at')->nullable();
             $table->double('weight')->default(0);

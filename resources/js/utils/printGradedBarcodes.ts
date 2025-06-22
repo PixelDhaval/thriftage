@@ -81,9 +81,9 @@ export function printGradedBarcodes(options: PrintGradedBarcodeOptions): Promise
                         <span class="weight-label">Weight</span>
                         <span class="weight-value">${bag.weight?.weight || weightValue} kg</span>
                     </div>
-                    <div class="grade-corner">
-                        <span class="grade-label">Grade</span>
-                        <span class="grade-value">${bag.grade?.name || gradeName}</span>
+                   <div class="section-corner">
+                        <span class="section-label">Section</span>
+                        <span class="section-value">${bag.item?.section?.name || itemSection || 'N/A'}</span>
                     </div>
                 </div>
                 
@@ -95,16 +95,6 @@ export function printGradedBarcodes(options: PrintGradedBarcodeOptions): Promise
                     <svg id="barcode-${bag.barcode}"></svg>
                 </div>
                 
-                <div class="bottom-row">
-                    <div class="section-corner">
-                        <span class="section-label">Section</span>
-                        <span class="section-value">${bag.item?.section?.name || itemSection || 'N/A'}</span>
-                    </div>
-                    <div class="barcode-corner">
-                        <span class="barcode-label">Barcode</span>
-                        <span class="barcode-text">${bag.barcode}</span>
-                    </div>
-                </div>
             </div>
         `).join('');
 
@@ -192,7 +182,7 @@ export function printGradedBarcodes(options: PrintGradedBarcodeOptions): Promise
                     }
                     
                     .item-name {
-                        font-size: 20px;
+                        font-size: 28px;
                         font-weight: bold;
                         color: #000;
                         text-align: center;

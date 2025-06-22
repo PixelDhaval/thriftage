@@ -28,7 +28,7 @@ class StoreGradedItemsPoolRequest extends FormRequest
         return [
             'party_id' => 'required|exists:parties,id',
             'import_id' => 'required|exists:imports,id',
-            'item_id' => 'required|exists:items,id',
+            'section_id' => 'required|exists:sections,id',
             'grade_id' => 'required|exists:grades,id',
             'graded_at' => 'nullable|date',
             'weight' => 'required|numeric|min:0',

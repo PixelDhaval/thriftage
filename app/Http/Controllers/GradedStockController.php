@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\GradedStock;
+use App\Models\Item;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -16,11 +17,11 @@ class GradedStockController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        $query = GradedStock::with(['item.section', 'grade']);
+        $query = GradedStock::with(['section', 'grade']);
 
         // Filter by item_id
-        if ($request->has('item_id') && $request->filled('item_id')) {
-            $query->where('item_id', $request->input('item_id'));
+        if ($request->has('section_id') && $request->filled('section_id')) {
+            $query->where('section_id', $request->input('section_id'));
         }
 
         // Filter by grade_id
@@ -49,7 +50,9 @@ class GradedStockController extends Controller
             'required_weight' => 'required|numeric|min:0.01'
         ]);
 
-        $stock = GradedStock::where('item_id', $request->input('item_id'))
+        $section = Item::find($request->input('item_id'))->section;
+
+        $stock = GradedStock::where('section_id', $section->id)
             ->where('grade_id', $request->input('grade_id'))
             ->first();
 

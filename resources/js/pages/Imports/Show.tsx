@@ -367,7 +367,7 @@ export default function Show({ import: importData }: Props) {
     // DataTable configurations for graded items pools
     const gradedItemsFilterableColumns = [
         { label: 'Party', key: 'party.name' },
-        { label: 'Item', key: 'item.name' },
+        { label: 'Section', key: 'section.name' },
         { label: 'Grade', key: 'grade.name' },
         { label: 'Weight', key: 'weight' },
         { label: 'Graded At', key: 'graded_at' },
@@ -389,15 +389,12 @@ export default function Show({ import: importData }: Props) {
               ]
             : []),
         {
-            id: 'item',
-            header: 'Item',
+            id: 'section',
+            header: 'Section',
             enableSorting: true,
             cell: ({ row }: { row: any }) => (
                 <div className="flex items-center gap-2">
-                    <span>{row.original.item?.name || '-'}</span>
-                    <span className="text-xs text-muted-foreground">
-                        ({row.original.item?.section?.name || 'No Section'})
-                    </span>
+                    <span>{row.original.section?.name || '-'}</span>
                 </div>
             ),
         },

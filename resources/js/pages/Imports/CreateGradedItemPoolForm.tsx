@@ -23,7 +23,7 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
     const [formData, setFormData] = useState({
         import_id: importData.id,
         party_id: importData.type === 'local' ? importData.party_id : '',
-        item_id: '',
+        section_id: '',
         grade_id: '',
         weight: '',
         graded_at: new Date(),
@@ -31,7 +31,7 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
     const [selectedParty, setSelectedParty] = useState<any>(
         importData.type === 'local' ? { id: importData.party_id, name: importData.party?.name } : null
     );
-    const [selectedItem, setSelectedItem] = useState<any>(null);
+    const [selectedSection, setSelectedSection] = useState<any>(null);
     const [grades, setGrades] = useState<any[]>([]);
     const [availableOpenedGoods, setAvailableOpenedGoods] = useState<any[]>([]);
     const [maxAvailableWeight, setMaxAvailableWeight] = useState<number>(0);
@@ -67,9 +67,9 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
         setFormData(prev => ({ ...prev, party_id: selected?.id || '' }));
     };
 
-    const handleItemChange = (selected: any) => {
-        setSelectedItem(selected);
-        setFormData(prev => ({ ...prev, item_id: selected?.id || '' }));
+    const handleSectionChange = (selected: any) => {
+        setSelectedSection(selected);
+        setFormData(prev => ({ ...prev, section_id: selected?.id || '' }));
     };
 
     const handleInputChange = (field: string, value: string | number | Date) => {
@@ -79,7 +79,7 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
-        if (!formData.party_id || !formData.item_id || !formData.grade_id || !formData.weight || !formData.graded_at) {
+        if (!formData.party_id || !formData.section_id || !formData.grade_id || !formData.weight || !formData.graded_at) {
             toast.error('Please fill in all required fields');
             return;
         }
@@ -117,12 +117,12 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
                 setFormData({
                     import_id: importData.id,
                     party_id: importData.type === 'local' ? importData.party_id : '',
-                    item_id: '',
+                    section_id: '',
                     grade_id: '',
                     weight: '',
                     graded_at: new Date(),
                 });
-                setSelectedItem(null);
+                setSelectedSection(null);
                 setSelectedParty(null);
                 
                 if (importData.type === 'container') {
@@ -190,15 +190,14 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
 
             {/* Item Selection */}
             <div className="grid gap-2">
-                <Label htmlFor="item">Item *</Label>
+                <Label htmlFor="section">Section *</Label>
                 <AsyncSelectInput
-                    route="/api/items/select"
-                    value={selectedItem}
-                    onChange={handleItemChange}
-                    placeholder="Select item"
-                    renderOption={(option) => `${option.name} - ${option.section?.name || 'No Section'}`}
+                    route="/api/sections/select"
+                    value={selectedSection}
+                    onChange={handleSectionChange}
+                    placeholder="Select Section"
+                    renderOption={(option) => `${option.name}`}
                     renderSelected={(option) => option.name}
-                    required
                 />
             </div>
 

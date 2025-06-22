@@ -6,15 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class GradedStock extends Model
 {
-    protected $fillable = ['item_id', 'grade_id', 'weight'];
+    protected $fillable = ['section_id', 'grade_id', 'weight'];
 
     protected $casts = [
         'weight' => 'decimal:2',
     ];
 
-    public function item()
+    public function section()
     {
-        return $this->belongsTo(Item::class);
+        return $this->belongsTo(Section::class);
     }
 
     public function grade()
@@ -25,9 +25,9 @@ class GradedStock extends Model
     /**
      * Check if sufficient stock is available
      */
-    public static function checkAvailability($itemId, $gradeId, $requiredWeight)
+    public static function checkAvailability($sectionId, $gradeId, $requiredWeight)
     {
-        $stock = self::where('item_id', $itemId)
+        $stock = self::where('section_id', $sectionId)
             ->where('grade_id', $gradeId)
             ->first();
 
@@ -39,23 +39,5 @@ class GradedStock extends Model
             'is_sufficient' => $availableWeight >= $requiredWeight,
             'shortage' => $availableWeight < $requiredWeight ? ($requiredWeight - $availableWeight) : 0
         ];
-    }
-
-    /**
-     * Deduct stock for graded bag creation
-     */
-    public static function deductStock($itemId, $gradeId, $weight)
-    {
-        $stock = self::where('item_id', $itemId)
-            ->where('grade_id', $gradeId)
-            ->first();
-
-        if ($stock && $stock->weight >= $weight) {
-            $stock->weight -= $weight;
-            $stock->save();
-            return true;
-        }
-
-        return false;
     }
 }

@@ -17,13 +17,15 @@ return new class extends Migration
             AFTER INSERT ON graded_bags_pools
             FOR EACH ROW
             BEGIN
+                DECLARE sec_id INT;
+                SELECT section_id INTO sec_id FROM items WHERE id = NEW.item_id;
                 UPDATE export_stocks
                 SET quantity = quantity + 1
                 WHERE item_id = NEW.item_id AND grade_id = NEW.grade_id AND weight_id = NEW.weight_id;
 
                 UPDATE graded_stocks
                 SET weight = weight - (SELECT weight FROM weights WHERE id = NEW.weight_id)
-                WHERE item_id = NEW.item_id AND grade_id = NEW.grade_id;
+                WHERE section_id = sec_id AND grade_id = NEW.grade_id;
             END
         ");
 
@@ -32,13 +34,15 @@ return new class extends Migration
             AFTER DELETE ON graded_bags_pools
             FOR EACH ROW
             BEGIN
+                DECLARE sec_id INT;
+                SELECT section_id INTO sec_id FROM items WHERE id = OLD.item_id;
                 UPDATE export_stocks
                 SET quantity = quantity - 1
                 WHERE  item_id = OLD.item_id AND grade_id = OLD.grade_id AND weight_id = OLD.weight_id;
 
                 UPDATE graded_stocks
                 SET weight = weight + (SELECT weight FROM weights WHERE id = OLD.weight_id)
-                WHERE item_id = OLD.item_id AND grade_id = OLD.grade_id;
+                WHERE section_id = sec_id AND grade_id = OLD.grade_id;
             END
         ");
     }

@@ -24,7 +24,7 @@ class GradedItemsPoolController extends Controller
 
     public function getGradedItemsPools(Request $request)
     {
-        $query = GradedItemsPool::with(['party', 'import', 'item', 'item.section', 'grade']);
+        $query = GradedItemsPool::with(['party', 'import', 'section', 'grade']);
 
         // Filter by import_id
         if ($request->has('import_id') && $request->filled('import_id')) {
@@ -35,18 +35,12 @@ class GradedItemsPoolController extends Controller
             $query->where('party_id', $request->input('party_id'));
         }
 
-        if($request->has('item_id') && $request->filled('item_id')){
-            $query->where('item_id', $request->input('item_id'));
+        if($request->has('item_id') && $request->filled('section_id')){
+            $query->where('section_id', $request->input('section_id'));
         }
 
         if($request->has('grade_id') && $request->filled('grade_id')){
             $query->where('grade_id', $request->input('grade_id'));
-        }
-
-        if($request->has('section_id') && $request->filled('section_id')) {
-            $query->whereHas('item.section', function ($q) use ($request) {
-                $q->where('id', $request->input('section_id'));
-            });
         }
 
         if ($request->has('search') && $request->filled('search')) {
@@ -60,18 +54,13 @@ class GradedItemsPoolController extends Controller
                             $q->where('name', 'like', "%{$searchTerm}%");
                         });
                         break;
-                    case 'item.name':
-                        $query->whereHas('item', function ($q) use ($searchTerm) {
+                    case 'section.name':
+                        $query->whereHas('section', function ($q) use ($searchTerm) {
                             $q->where('name', 'like', "%{$searchTerm}%");
                         });
                         break;
                     case 'grade.name':
                         $query->whereHas('grade', function ($q) use ($searchTerm) {
-                            $q->where('name', 'like', "%{$searchTerm}%");
-                        });
-                        break;
-                    case 'section.name':
-                        $query->whereHas('item.section', function ($q) use ($searchTerm) {
                             $q->where('name', 'like', "%{$searchTerm}%");
                         });
                         break;
@@ -87,7 +76,7 @@ class GradedItemsPoolController extends Controller
                     $q->whereHas('party', function ($q) use ($searchTerm) {
                         $q->where('name', 'like', "%{$searchTerm}%");
                     })
-                        ->orWhereHas('item', function ($q) use ($searchTerm) {
+                        ->orWhereHas('section', function ($q) use ($searchTerm) {
                             $q->where('name', 'like', "%{$searchTerm}%");
                         })
                         ->orWhereHas('grade', function ($q) use ($searchTerm) {
@@ -108,9 +97,9 @@ class GradedItemsPoolController extends Controller
                     $query->join('parties', 'graded_items_pools.party_id', '=', 'parties.id')
                         ->orderBy('parties.name', $sortDirection);
                     break;
-                case 'item.name':
-                    $query->join('items', 'graded_items_pools.item_id', '=', 'items.id')
-                        ->orderBy('items.name', $sortDirection);
+                case 'section.name':
+                    $query->join('sections', 'graded_items_pools.section_id', '=', 'sections.id')
+                        ->orderBy('sections.name', $sortDirection);
                     break;
                 case 'grade.name':
                     $query->join('grades', 'graded_items_pools.grade_id', '=', 'grades.id')
@@ -150,18 +139,12 @@ class GradedItemsPoolController extends Controller
             $query->where('import_id', $request->input('import_id'));
         }
 
-        if ($request->has('item_id') && $request->filled('item_id')) {
-            $query->where('item_id', $request->input('item_id'));
+        if ($request->has('section_id') && $request->filled('section_id')) {
+            $query->where('section_id', $request->input('section_id'));
         }
 
         if ($request->has('grade_id') && $request->filled('grade_id')) {
             $query->where('grade_id', $request->input('grade_id'));
-        }
-
-        if ($request->has('section_id') && $request->filled('section_id')) {
-            $query->whereHas('import', function ($q) use ($request) {
-                $q->where('section_id', $request->input('section_id'));
-            });
         }
 
         if ($request->has('search') && $request->filled('search')) {
@@ -176,11 +159,8 @@ class GradedItemsPoolController extends Controller
                     ->orWhereHas('party', function ($q) use ($searchTerm) {
                         $q->where('name', 'like', "%{$searchTerm}%");
                     })
-                    ->orWhereHas('item', function ($q) use ($searchTerm) {
-                        $q->where('name', 'like', "%{$searchTerm}%")
-                            ->orWhereHas('section', function ($q) use ($searchTerm) {
-                                $q->where('name', 'like', "%{$searchTerm}%");
-                            });
+                    ->orWhereHas('section', function ($q) use ($searchTerm) {
+                        $q->where('name', 'like', "%{$searchTerm}%");
                     })
                     ->orWhereHas('grade', function ($q) use ($searchTerm) {
                         $q->where('name', 'like', "%{$searchTerm}%");

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('graded_stocks', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('item_id')->constrained('items')->onDelete('cascade');
+            $table->foreignId('section_id')->constrained('sections')->onDelete('cascade');
             $table->foreignId('grade_id')->constrained('grades')->onDelete('cascade');
             $table->double('weight')->default(0);
             $table->timestamps();

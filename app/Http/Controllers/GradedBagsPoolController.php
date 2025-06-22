@@ -6,6 +6,8 @@ use App\Http\Requests\StoreGradedBagsPoolRequest;
 use App\Http\Requests\UpdateGradedBagsPoolRequest;
 use App\Models\Permission;
 use App\Models\GradedBagsPool;
+use App\Models\Item;
+use App\Models\Weight;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -201,10 +203,12 @@ class GradedBagsPoolController extends Controller
         ]);
 
         // Check stock availability
-        $weight = \App\Models\Weight::find($request->input('weight_id'));
+        $weight = Weight::find($request->input('weight_id'));
         $requiredWeight = $request->input('quantity') * $weight->weight;
 
-        $gradedStock = \App\Models\GradedStock::where('item_id', $request->input('item_id'))
+        $section = Item::find($request->input('item_id'))->section;
+
+        $gradedStock = \App\Models\GradedStock::where('section_id', $section->id)
             ->where('grade_id', $request->input('grade_id'))
             ->first();
 
@@ -257,7 +261,9 @@ class GradedBagsPoolController extends Controller
         $weight = \App\Models\Weight::find($request->input('weight_id'));
         $requiredWeight = $request->input('quantity') * $weight->weight;
 
-        $gradedStock = \App\Models\GradedStock::where('item_id', $request->input('item_id'))
+        $section = \App\Models\Item::find($request->input('item_id'))->section;
+
+        $gradedStock = \App\Models\GradedStock::where('section_id', $section->id)
             ->where('grade_id', $request->input('grade_id'))
             ->first();
 
@@ -278,7 +284,7 @@ class GradedBagsPoolController extends Controller
                     'grade_id' => $request->input('grade_id'),
                     'weight_id' => $request->input('weight_id'),
                 ]);
-                $graded_bags_pools[] = $graded_bags_pool->load(['item.section', 'grade', 'weight']);
+                $graded_bags_pools[] = $graded_bags_pool->load(['section', 'grade', 'weight']);
             }
         });
 

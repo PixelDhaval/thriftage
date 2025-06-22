@@ -13,11 +13,11 @@ return new class extends Migration
     public function up(): void
     {
         DB::unprepared("
-            CREATE TRIGGER create_graded_stock_on_insert_items
-            AFTER INSERT ON items
+            CREATE TRIGGER create_graded_stock_on_insert_section
+            AFTER INSERT ON sections
             FOR EACH ROW
             BEGIN
-                INSERT INTO graded_stocks (item_id, grade_id, weight)
+                INSERT INTO graded_stocks (section_id, grade_id, weight)
                 SELECT NEW.id, g.id, 0
                 FROM grades g
                 WHERE g.id IS NOT NULL;
@@ -28,9 +28,9 @@ return new class extends Migration
             AFTER INSERT ON grades
             FOR EACH ROW
             BEGIN
-                INSERT INTO graded_stocks (item_id, grade_id, weight)
+                INSERT INTO graded_stocks (section_id, grade_id, weight)
                 SELECT i.id, NEW.id, 0
-                FROM items i
+                FROM sections i
                 WHERE i.id IS NOT NULL;
             END");
 
@@ -41,7 +41,7 @@ return new class extends Migration
             BEGIN
                 UPDATE graded_stocks
                 SET weight = weight + NEW.weight
-                WHERE item_id = NEW.item_id AND grade_id = NEW.grade_id;
+                WHERE section_id = NEW.section_id AND grade_id = NEW.grade_id;
 
                 UPDATE in_process_stocks
                 SET weight = weight - NEW.weight
@@ -56,7 +56,7 @@ return new class extends Migration
             BEGIN
                 UPDATE graded_stocks
                 SET weight = weight + (NEW.weight - OLD.weight)
-                WHERE item_id = NEW.item_id AND grade_id = NEW.grade_id;
+                WHERE section_id = NEW.section_id AND grade_id = NEW.grade_id;
 
                 UPDATE in_process_stocks
                 SET weight = weight - (NEW.weight - OLD.weight)
@@ -71,7 +71,7 @@ return new class extends Migration
             BEGIN
                 UPDATE graded_stocks
                 SET weight = weight - OLD.weight
-                WHERE item_id = OLD.item_id AND grade_id = OLD.grade_id;
+                WHERE section_id = OLD.section_id AND grade_id = OLD.grade_id;
 
                 UPDATE in_process_stocks
                 SET weight = weight + OLD.weight

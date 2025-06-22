@@ -28,7 +28,7 @@ class StoreGradedBagsPoolRequest extends FormRequest
         return [
             'weight_id' => 'required|exists:weights,id',
             'item_id' => 'required|exists:items,id',
-            'grade_id' => 'required|exists:grades,id'
+            'grade_id' => 'required|exists:grades,id',
             'quantity' => 'required|integer|min:1',
         ];
     }
