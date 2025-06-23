@@ -133,7 +133,8 @@ export default function AddImportBagForm({ importData, onSuccess }: Props) {
                     partyName: selectedParty.name,
                     containerNo: importData?.container_no,
                     movementDate: importData?.movement_date,
-                    weightValue: selectedWeight?.weight || 'Unknown'
+                    weightValue: selectedWeight?.weight || 'Unknown',
+                    totalQuantity: data.quantity
                 });
 
                 toast.success(`Batch ${i + 1}/${totalBatches} completed: ${currentBatchSize} bags created and printed.`);
@@ -206,7 +207,8 @@ export default function AddImportBagForm({ importData, onSuccess }: Props) {
                             partyName: selectedParty.name,
                             containerNo: importData?.container_no,
                             movementDate: importData?.movement_date,
-                            weightValue: selectedWeight?.weight || 'Unknown'
+                            weightValue: selectedWeight?.weight || 'Unknown',
+                            totalQuantity: data.quantity
                         });
                         toast.success('Labels printed successfully!');
                     } catch (printError) {

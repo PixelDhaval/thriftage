@@ -1,95 +1,27 @@
-import { format } from 'date-fns';
-import { toast } from 'sonner';
-
-export interface BarcodeItem {
-    barcode: string;
-    id?: string | number;
-    party?: { name: string };
-    weight?: { weight: string };
-}
-
-export interface PrintBarcodeOptions {
-    bags: BarcodeItem[];
-    partyName: string;
-    containerNo?: string;
-    movementDate?: string;
-    weightValue: string;
-    title?: string;
-    isSingle?: boolean;
-    totalQuantity?: number;
-}
-
-export function printBarcodes(options: PrintBarcodeOptions): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-        const { bags, partyName, containerNo, movementDate, weightValue, title, isSingle = false, totalQuantity } = options;
-        
-        // Try to open print window
-        let printWindow: Window | null = null;
-        
-        try {
-            printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
-        } catch (error) {
-            console.error('Failed to open popup window:', error);
-        }
-        
-        if (!printWindow || printWindow.closed) {
-            // Fallback: Show alert and try again
-            const userWantsToTry = window.confirm(
-                'Print window was blocked by your browser. Please allow popups for this site and try again. ' +
-                'Click OK to retry or Cancel to skip printing.'
-            );
-            
-            if (!userWantsToTry) {
-                resolve(); // User chose to skip printing
-                return;
-            }
-            
-            // Try again after user confirmation
-            try {
-                printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
-            } catch (error) {
-                console.error('Second attempt failed:', error);
-            }
-            
-            if (!printWindow || printWindow.closed) {
-                toast.error('Unable to open print window. Please check your popup blocker settings.');
-                reject(new Error('Failed to open print window'));
-                return;
-            }
-        }
-
-        // Generate thermal printer optimized HTML
-        const barcodeElements = bags.map(bag => `
+import{t as d}from"./index-CtjZe5nG.js";function P(m){return new Promise((i,p)=>{var w,g;const{bags:n,partyName:s,containerNo:o,movementDate:f,weightValue:l,title:u,isSingle:r=!1,totalQuantity:b}=m;let t=null;try{t=window.open("","_blank","width=800,height=600,scrollbars=yes,resizable=yes")}catch(e){console.error("Failed to open popup window:",e)}if(!t||t.closed){if(!window.confirm("Print window was blocked by your browser. Please allow popups for this site and try again. Click OK to retry or Cancel to skip printing.")){i();return}try{t=window.open("","_blank","width=800,height=600,scrollbars=yes,resizable=yes")}catch(a){console.error("Second attempt failed:",a)}if(!t||t.closed){d.error("Unable to open print window. Please check your popup blocker settings."),p(new Error("Failed to open print window"));return}}const h=n.map(e=>`
             <div class="barcode-label">
                 <div class="label-header">
-                    <div class="weight-info">WT: ${weightValue} kg</div>
-                    <div class="barcode-text">${totalQuantity ? `${totalQuantity} Bags` : ''}</div>
+                    <div class="weight-info">WT: ${l} kg</div>
+                    <div class="barcode-text">${b?`${b} Bags`:""}</div>
                 </div>
                 
                 <div class="barcode-container">
-                    <svg id="barcode-${bag.barcode}"></svg>
+                    <svg id="barcode-${e.barcode}"></svg>
                 </div>
                 
-                <div class="supplier-name">${partyName}</div>
+                <div class="supplier-name">${s}</div>
                 
                 <div class="container-info">
-                    ${containerNo ? `<div class="container-no">${containerNo}</div>` : ''}
-                    ${movementDate ? `<div class="movement-date">${new Date(movementDate).toLocaleDateString()}</div>` : ''}
+                    ${o?`<div class="container-no">${o}</div>`:""}
+                    ${f?`<div class="movement-date">${new Date(f).toLocaleDateString()}</div>`:""}
                 </div>
             </div>
-        `).join('');
-
-        const pageTitle = title || (isSingle ? `Barcode Label - ${bags[0]?.barcode}` : `All Barcode Labels - ${bags.length} items`);
-        const batchInfo = isSingle 
-            ? `Single label for ${partyName} - ${weightValue} kg - ${bags[0]?.barcode}`
-            : `${bags.length} labels for ${partyName} - ${weightValue} kg`;
-
-        const htmlContent = `
+        `).join(""),y=u||(r?`Barcode Label - ${(w=n[0])==null?void 0:w.barcode}`:`All Barcode Labels - ${n.length} items`),k=r?`Single label for ${s} - ${l} kg - ${(g=n[0])==null?void 0:g.barcode}`:`${n.length} labels for ${s} - ${l} kg`,x=`
             <!DOCTYPE html>
             <html>
             <head>
-                <title>${pageTitle}</title>
-                <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+                <title>${y}</title>
+                <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
                 <style>
                     @page {
                         size: 4in 3in;
@@ -244,16 +176,16 @@ export function printBarcodes(options: PrintBarcodeOptions): Promise<void> {
             </head>
             <body>
                 <div class="batch-info">
-                    ${batchInfo}${containerNo ? ` - Container: ${containerNo}` : ''}
+                    ${k}${o?` - Container: ${o}`:""}
                 </div>
                 
                 <div class="print-controls">
-                    <button onclick="window.print()" id="printBtn">🖨️ Print ${isSingle ? 'Label' : 'All Labels'}</button>
+                    <button onclick="window.print()" id="printBtn">🖨️ Print ${r?"Label":"All Labels"}</button>
                     <button onclick="confirmPrintComplete()" id="completeBtn">✅ Print Complete</button>
-                    <button onclick="skipPrint()" id="skipBtn">⏭️ ${isSingle ? 'Close' : 'Skip & Continue'}</button>
+                    <button onclick="skipPrint()" id="skipBtn">⏭️ ${r?"Close":"Skip & Continue"}</button>
                 </div>
                 
-                ${barcodeElements}
+                ${h}
                 
                 <script>
                     let isPrintComplete = false;
@@ -261,8 +193,8 @@ export function printBarcodes(options: PrintBarcodeOptions): Promise<void> {
                     
                     window.onload = function() {
                         try {
-                            ${bags.map(bag => `
-                                JsBarcode("#barcode-${bag.barcode}", "${bag.barcode}", {
+                            ${n.map(e=>`
+                                JsBarcode("#barcode-${e.barcode}", "${e.barcode}", {
                                     format: "CODE128",
                                     width: 2,
                                     height: 50,
@@ -271,7 +203,7 @@ export function printBarcodes(options: PrintBarcodeOptions): Promise<void> {
                                     background: "#ffffff",
                                     lineColor: "#000000"
                                 });
-                            `).join('')}
+                            `).join("")}
                             
                             // Auto-focus the print button
                             document.getElementById('printBtn').focus();
@@ -337,47 +269,7 @@ export function printBarcodes(options: PrintBarcodeOptions): Promise<void> {
                             skipPrint();
                         }
                     });
-                </script>
+                <\/script>
             </body>
             </html>
-        `;
-
-        try {
-            printWindow.document.write(htmlContent);
-            printWindow.document.close();
-            printWindow.focus();
-        } catch (error) {
-            console.error('Error writing to print window:', error);
-            printWindow.close();
-            reject(new Error('Failed to write content to print window'));
-            return;
-        }
-        
-        // Listen for messages from the print window
-        const messageHandler = (event: MessageEvent) => {
-            if (event.data && event.data.type === 'printComplete') {
-                window.removeEventListener('message', messageHandler);
-                
-                const action = event.data.action;
-                if (action === 'printComplete') {
-                    resolve();
-                } else if (action === 'printSkipped') {
-                    toast.info('Print skipped.');
-                    resolve();
-                } else {
-                    toast.warning('Print was cancelled.');
-                    resolve();
-                }
-            }
-        };
-        
-        window.addEventListener('message', messageHandler);
-        
-        // Fallback timeout
-        setTimeout(() => {
-            window.removeEventListener('message', messageHandler);
-            toast.warning('Print timeout reached.');
-            resolve();
-        }, 60000);
-    });
-}
+        `;try{t.document.write(x),t.document.close(),t.focus()}catch(e){console.error("Error writing to print window:",e),t.close(),p(new Error("Failed to write content to print window"));return}const c=e=>{if(e.data&&e.data.type==="printComplete"){window.removeEventListener("message",c);const a=e.data.action;a==="printComplete"?i():a==="printSkipped"?(d.info("Print skipped."),i()):(d.warning("Print was cancelled."),i())}};window.addEventListener("message",c),setTimeout(()=>{window.removeEventListener("message",c),d.warning("Print timeout reached."),i()},6e4)})}export{P as p};

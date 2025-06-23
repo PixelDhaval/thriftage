@@ -154,6 +154,7 @@ export default function Show({ import: importData }: Props) {
                 containerNo: importData.container_no,
                 movementDate: importData.movement_date,
                 weightValue: row.original.weight?.weight || 'Unknown',
+                totalQuantity: bags.length,
             });
 
             toast.success(`Print initiated for ${bags.length} barcodes.`);
@@ -173,6 +174,7 @@ export default function Show({ import: importData }: Props) {
                 movementDate: importData.movement_date,
                 weightValue: importBag.weight?.weight || 'Unknown',
                 isSingle: true,
+                totalQuantity: 1,
             });
             toast.success(`Print initiated for barcode ${importBag.barcode}.`);
         } catch (error) {
