@@ -25,8 +25,29 @@ return [
         ],
         'owner' => [
             'users' => 'r,u',
-            'roles' => 'r,u',
-        ]
+            'grades' => 'c,r,u,d',
+            'items' => 'c,r,u,d',
+            'parties' => 'c,r,u,d',
+            'sections' => 'c,r,u,d',
+            'weights' => 'c,r,u,d',
+            'imports' => 'c,r,u,d',
+            'import-bags' => 'c,r,u,d',
+            'bags-opening' => 'r,u',
+            'graded-bags-pools' => 'c,r,u,d',
+            'graded-items-pools' => 'c,r,u,d',
+        ],
+        'manager' => [
+             'grades' => 'c,r,u,d',
+            'items' => 'c,r,u,d',
+            'parties' => 'c,r,u,d',
+            'sections' => 'c,r,u,d',
+            'weights' => 'c,r,u,d',
+            'imports' => 'c,r,u,d',
+            'import-bags' => 'c,r,u,d',
+            'bags-opening' => 'r,u',
+            'graded-bags-pools' => 'c,r,u,d',
+            'graded-items-pools' => 'c,r,u,d',
+        ],
     ],
 
     'permissions_map' => [
