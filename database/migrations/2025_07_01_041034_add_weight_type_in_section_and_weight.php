@@ -38,7 +38,7 @@ return new class extends Migration
         });
 
         Schema::table('export_stocks', function (Blueprint $table) {
-            $table->dropForeign(['grade_id']    );
+            $table->dropForeign(['grade_id']);
             $table->dropColumn('grade_id');
         });
 
@@ -81,7 +81,7 @@ return new class extends Migration
                 DECLARE sec_id INT;
                 DECLARE grd_id INT;
                 DECLARE weight_type VARCHAR(10);
-                SELECT section_id INTO sec_id, grade_id INTO grd_id FROM items WHERE id = NEW.item_id;
+                SELECT section_id, grade_id INTO sec_id, grd_id FROM items WHERE id = NEW.item_id;
                 SELECT weight_type INTO weight_type FROM weights WHERE id = NEW.weight_id;
                 
                 UPDATE export_stocks
@@ -114,7 +114,7 @@ return new class extends Migration
                 DECLARE sec_id INT;
                 DECLARE grd_id INT;
                 DECLARE weight_type VARCHAR(10);
-                SELECT section_id INTO sec_id, grade_id INTO grd_id FROM items WHERE id = OLD.item_id;
+                SELECT section_id, grade_id INTO sec_id, grd_id FROM items WHERE id = OLD.item_id;
                 SELECT weight_type INTO weight_type FROM weights WHERE id = OLD.weight_id;
                 
                 UPDATE export_stocks
