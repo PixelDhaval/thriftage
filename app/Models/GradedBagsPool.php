@@ -7,7 +7,7 @@ use Carbon\Carbon;
 
 class GradedBagsPool extends Model
 {
-    protected $fillable = ['weight_id', 'item_id', 'grade_id', 'barcode', 'status'];
+    protected $fillable = ['weight_id', 'item_id', 'grade_id', 'barcode', 'status', 'weight'];
 
     protected static function boot()
     {

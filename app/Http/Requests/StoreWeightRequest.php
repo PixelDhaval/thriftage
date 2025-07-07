@@ -26,7 +26,8 @@ class StoreWeightRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'weight' => 'required|numeric|unique:weights,weight',
+            'weight' => 'required|numeric',
+            'weight_type' => 'required|in:kg,pair',
         ];
     }
 }

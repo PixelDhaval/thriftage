@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\GradedStock;
 use App\Models\Item;
+use App\Models\Section;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -39,31 +40,32 @@ class GradedStockController extends Controller
 
     public function checkAvailability(Request $request)
     {
-        $user = Auth::user();
-        if (!$user->hasPermission('graded-bags-pools-read')) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
-
         $request->validate([
             'item_id' => 'required|exists:items,id',
             'grade_id' => 'required|exists:grades,id',
-            'required_weight' => 'required|numeric|min:0.01'
+            'required_weight' => 'required|numeric',
+            'include_pair_info' => 'boolean'
         ]);
 
-        $section = Item::find($request->input('item_id'))->section;
+        $item = Item::with('section')->findOrFail($request->input('item_id'));
+        $section = $item->section;
+        $includePairInfo = $request->input('include_pair_info', false);
+        
+        $availabilityInfo = GradedStock::checkAvailability(
+            $section->id, 
+            $request->input('grade_id'), 
+            $request->input('required_weight')
+        );
 
-        $stock = GradedStock::where('section_id', $section->id)
-            ->where('grade_id', $request->input('grade_id'))
-            ->first();
+        // Add pair info if requested and section weight type is pair
+        if ($includePairInfo && $section->weight_type === 'pair') {
+            $stock = GradedStock::where('section_id', $section->id)
+                ->where('grade_id', $request->input('grade_id'))
+                ->first();
+            
+            $availabilityInfo['available_pair'] = $stock ? $stock->pair : 0;
+        }
 
-        $availableWeight = $stock ? $stock->weight : 0;
-        $requiredWeight = $request->input('required_weight');
-
-        return response()->json([
-            'available_weight' => $availableWeight,
-            'required_weight' => $requiredWeight,
-            'is_sufficient' => $availableWeight >= $requiredWeight,
-            'shortage' => $availableWeight < $requiredWeight ? ($requiredWeight - $availableWeight) : 0
-        ]);
+        return response()->json($availabilityInfo);
     }
 }

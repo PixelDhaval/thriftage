@@ -26,9 +26,11 @@ class StoreItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|unique:items',
+            'name' => 'required',
             'description' => 'nullable|string|max:255',
             'section_id' => 'required|exists:sections,id',
+            'grade_id' => 'required|exists:grades,id',
+            'default_weight_id' => 'nullable|exists:weights,id',
         ];
     }
 }

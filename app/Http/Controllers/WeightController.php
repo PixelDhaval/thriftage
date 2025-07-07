@@ -24,6 +24,12 @@ class WeightController extends Controller
     public function getWeights(Request $request)
     {
         $query = Weight::with('createdBy', 'updatedBy');
+        
+        // Filter by weight_type if provided
+        if ($request->has('weight_type') && $request->filled('weight_type')) {
+            $query->where('weight_type', $request->input('weight_type'));
+        }
+        
         if ($request->has('sort_column') && $request->filled('sort_column')) {
             $query->orderBy($request->input('sort_column'), $request->input('sort_direction'));
         }
@@ -71,18 +77,24 @@ class WeightController extends Controller
     public function getWeightsForSelect(Request $request){
         $query = Weight::with('createdBy', 'updatedBy');
 
+        // Filter by section_id
         if($request->has('section_id') && $request->filled('section_id')){
             $query->where('section_id', $request->input('section_id'));
+        }
+        
+        // Filter by weight_type
+        if ($request->has('weight_type') && $request->filled('weight_type')) {
+            $query->where('weight_type', $request->input('weight_type'));
         }
 
         if ($request->has('search') && $request->filled('search')) {
             $searchTerm = $request->input('search');
             $query->where('name', 'like', "%{$searchTerm}%")
                   ->orWhere('description', 'like', "%{$searchTerm}%")
+                  ->orWhere('weight', 'like', "%{$searchTerm}%")
                   ->orWhereHas('section', function ($q) use ($searchTerm) {
                       $q->where('name', 'like', "%{$searchTerm}%");
                   });
-
         }
 
         $weights = $query->get();

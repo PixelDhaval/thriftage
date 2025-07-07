@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class GradedItemsPool extends Model
 {
-    protected $fillable = ['party_id', 'import_id', 'section_id', 'grade_id', 'weight', 'graded_at'];
+    protected $fillable = ['party_id', 'import_id', 'section_id', 'grade_id', 'weight', 'pair', 'graded_at'];
 
     protected $casts = [
         'graded_at' => 'date',

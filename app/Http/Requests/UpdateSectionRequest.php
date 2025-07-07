@@ -26,7 +26,8 @@ class UpdateSectionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|unique:sections,name,' . $this->section->id
+            'name' => 'required|unique:sections,name,' . $this->section->id,
+            'weight_type' => 'required|in:kg,pair',
         ];
     }
 }

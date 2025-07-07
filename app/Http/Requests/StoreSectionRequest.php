@@ -27,6 +27,7 @@ class StoreSectionRequest extends FormRequest
     {
         return [
             'name' => 'required|unique:sections',
+            'weight_type' => 'required|in:kg,pair',
         ];
     }
 }

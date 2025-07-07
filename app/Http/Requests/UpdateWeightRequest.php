@@ -26,7 +26,8 @@ class UpdateWeightRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'weight' => 'required|numeric|unique:weights,weight,' . $this->weight->id,
+            'weight' => 'required|numeric',
+            'weight_type' => 'required|in:kg,pair',
         ];
     }
 }

@@ -3,15 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarIcon } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
+import { CalendarInput } from '@/components/ui/calendar-input';
 import { format } from 'date-fns';
 import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { CalendarInput } from '@/components/ui/calendar-input';
 
 interface Props {
     importData: any;
@@ -26,6 +22,7 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
         section_id: '',
         grade_id: '',
         weight: '',
+        pair: '',
         graded_at: new Date(),
     });
     const [selectedParty, setSelectedParty] = useState<any>(
@@ -35,6 +32,7 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
     const [grades, setGrades] = useState<any[]>([]);
     const [availableOpenedGoods, setAvailableOpenedGoods] = useState<any[]>([]);
     const [maxAvailableWeight, setMaxAvailableWeight] = useState<number>(0);
+    const [sectionWeightType, setSectionWeightType] = useState<string>('kg');
 
     // Fetch grades and available opened goods
     useEffect(() => {
@@ -70,6 +68,7 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
     const handleSectionChange = (selected: any) => {
         setSelectedSection(selected);
         setFormData(prev => ({ ...prev, section_id: selected?.id || '' }));
+        setSectionWeightType(selected?.weight_type || 'kg');
     };
 
     const handleInputChange = (field: string, value: string | number | Date) => {
@@ -79,8 +78,20 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
-        if (!formData.party_id || !formData.section_id || !formData.grade_id || !formData.weight || !formData.graded_at) {
+        // Basic validation
+        if (!formData.party_id || !formData.section_id || !formData.grade_id || !formData.graded_at) {
             toast.error('Please fill in all required fields');
+            return;
+        }
+
+        // Weight type specific validation
+        if (sectionWeightType === 'kg' && !formData.weight) {
+            toast.error('Please enter the weight');
+            return;
+        }
+
+        if (sectionWeightType === 'pair' && (!formData.pair || !formData.weight)) {
+            toast.error('Please enter both pair and weight values');
             return;
         }
 
@@ -88,6 +99,15 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
         if (weight <= 0) {
             toast.error('Weight must be greater than 0');
             return;
+        }
+
+        // If pair type, validate pair value
+        if (sectionWeightType === 'pair') {
+            const pair = parseInt(formData.pair.toString());
+            if (isNaN(pair) || pair <= 0) {
+                toast.error('Pair count must be a positive number');
+                return;
+            }
         }
 
         // Validate against available weight
@@ -104,6 +124,7 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
             const submitData = {
                 ...formData,
                 weight: weight,
+                pair: sectionWeightType === 'pair' ? parseInt(formData.pair.toString()) : null,
                 graded_at: format(formData.graded_at, 'yyyy-MM-dd'),
             };
 
@@ -120,10 +141,10 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
                     section_id: '',
                     grade_id: '',
                     weight: '',
+                    pair: '',
                     graded_at: new Date(),
                 });
                 setSelectedSection(null);
-                setSelectedParty(null);
                 
                 if (importData.type === 'container') {
                     setSelectedParty(null);
@@ -188,7 +209,7 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
                 </div>
             )}
 
-            {/* Item Selection */}
+            {/* Section Selection */}
             <div className="grid gap-2">
                 <Label htmlFor="section">Section *</Label>
                 <AsyncSelectInput
@@ -196,9 +217,14 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
                     value={selectedSection}
                     onChange={handleSectionChange}
                     placeholder="Select Section"
-                    renderOption={(option) => `${option.name}`}
+                    renderOption={(option) => `${option.name} (${option.weight_type})`}
                     renderSelected={(option) => option.name}
                 />
+                {selectedSection && (
+                    <p className="text-sm text-muted-foreground">
+                        Weight type: <span className="font-medium">{sectionWeightType.toUpperCase()}</span>
+                    </p>
+                )}
             </div>
 
             {/* Grade Selection */}
@@ -218,6 +244,25 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
                 </Select>
             </div>
 
+            {/* Pair Count - Only show for pair type */}
+            {sectionWeightType === 'pair' && (
+                <div className="grid gap-2">
+                    <Label htmlFor="pair">Pair Count *</Label>
+                    <Input
+                        id="pair"
+                        type="number"
+                        min="1"
+                        value={formData.pair}
+                        onChange={(e) => handleInputChange('pair', e.target.value)}
+                        placeholder="Enter pair count"
+                        required
+                    />
+                    <p className="text-sm text-muted-foreground">
+                        Enter the number of pairs
+                    </p>
+                </div>
+            )}
+
             {/* Weight */}
             <div className="grid gap-2">
                 <Label htmlFor="weight">Weight (kg) *</Label>
@@ -234,6 +279,7 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
                 />
                 <p className="text-sm text-muted-foreground">
                     Enter the weight of graded items in kilograms
+                    {sectionWeightType === 'pair' && ' (total weight for all pairs)'}
                 </p>
             </div>
 
@@ -243,8 +289,8 @@ export default function CreateGradedItemPoolForm({ importData, onSuccess }: Prop
                 <CalendarInput
                     id='graded_at'
                     value={formData.graded_at}
-                    onChange={(e) => handleInputChange('graded_at', e.target.value)}
-                 />
+                    onChange={(date) => handleInputChange('graded_at', date)}
+                />
             </div>
 
             {/* Submit Button */}

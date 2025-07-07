@@ -22,6 +22,9 @@ return [
             'bags-opening' => 'r,u',
             'graded-bags-pools' => 'c,r,u,d',
             'graded-items-pools' => 'c,r,u,d',
+            'reports' => 'r',
+            'report-production' => 'r',
+            'report-grading' => 'r'
         ],
         'owner' => [
             'users' => 'r,u',
@@ -35,6 +38,9 @@ return [
             'bags-opening' => 'r,u',
             'graded-bags-pools' => 'c,r,u,d',
             'graded-items-pools' => 'c,r,u,d',
+            'reports' => 'r',
+            'report-production' => 'r',
+            'report-grading' => 'r'
         ],
         'manager' => [
              'grades' => 'c,r,u,d',
@@ -46,6 +52,7 @@ return [
             'import-bags' => 'c,r,u,d',
             'bags-opening' => 'r,u',
             'graded-bags-pools' => 'c,r,u,d',
+            'reports' => 'r',
             'graded-items-pools' => 'c,r,u,d',
         ],
     ],
@@ -56,6 +63,6 @@ return [
         'u' => 'update',
         'd' => 'delete',
     ],
-
+    
     'create_users' => true,
 ];

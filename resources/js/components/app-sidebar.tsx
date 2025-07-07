@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, Users, KeyRound, Shield, Settings, Settings2, ArrowLeftRight } from 'lucide-react';
+import { BookOpen, Folder, LayoutGrid, Users, KeyRound, Shield, Settings, Settings2, ArrowLeftRight, Box, FileBarChart } from 'lucide-react';
 import AppLogo from './app-logo';
 import { useMemo } from 'react';
 
@@ -31,8 +31,14 @@ const baseNavItems: (NavItem & { requiredPermissions?: string[] })[] = [
     {
         title: 'Graded Bags',
         href: '/graded-bags-pools',
-        icon: BookOpen,
+        icon: Box,
         requiredPermissions: ['graded-bags-pools-read'],
+    },
+    {
+        title: 'Reports',
+        href: '/reports',
+        icon: FileBarChart,
+        requiredPermissions: ['report-production-read', 'report-grading-read'],
     },
     {
         title: 'Master',

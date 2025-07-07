@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Section extends Model
 {
-    protected $fillable = ['name', 'created_by', 'updated_by'];
+    protected $fillable = ['name', 'weight_type', 'created_by', 'updated_by'];
 
     public function createdBy()
     {

@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { type Section } from '@/types';
 import { useForm } from '@inertiajs/react';
 import axios from 'axios';
@@ -17,11 +18,13 @@ export default function EditSectionForm({ section, onSuccess }: Props) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { data, setData, errors, setError, clearErrors } = useForm({
         name: section.name,
+        weight_type: section.weight_type || 'kg',
     });
 
     useEffect(() => {
         setData({
             name: section.name,
+            weight_type: section.weight_type || 'kg',
         });
     }, [section]);
 
@@ -72,6 +75,28 @@ export default function EditSectionForm({ section, onSuccess }: Props) {
                     {errors.name && (
                         <p className="text-destructive text-sm">{errors.name}</p>
                     )}
+                </div>
+
+                <div className="grid gap-2">
+                    <Label htmlFor="weight_type">Weight Type</Label>
+                    <Select 
+                        value={data.weight_type} 
+                        onValueChange={value => setData('weight_type', value)}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select weight type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="kg">Kilograms (kg)</SelectItem>
+                            <SelectItem value="pair">Pairs</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    {errors.weight_type && (
+                        <p className="text-destructive text-sm">{errors.weight_type}</p>
+                    )}
+                    <p className="text-sm text-muted-foreground">
+                        Select whether this section measures items in kilograms or pairs
+                    </p>
                 </div>
             </div>
 

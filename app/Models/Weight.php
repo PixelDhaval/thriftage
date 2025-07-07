@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Weight extends Model
 {
-    protected $fillable = ['weight', 'created_by', 'updated_by'];
+    protected $fillable = ['weight', 'weight_type', 'created_by', 'updated_by'];
 
     public function createdBy()
     {

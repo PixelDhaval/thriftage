@@ -17,6 +17,7 @@ use App\Http\Controllers\UserRolePermissionController;
 use App\Http\Controllers\WeightController;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\GradedStockController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
     return Inertia::render('welcome');
@@ -105,6 +106,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/api/graded-stock/available', [GradedStockController::class, 'getAvailableStock']);
     Route::post('/api/graded-stock/check-availability', [GradedStockController::class, 'checkAvailability']);
 
+    // Dashboard data endpoint
+    Route::get('/api/dashboard', [DashboardController::class, 'getDashboardData']);
+
+});
+
+
+// Reports Routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/reports', [App\Http\Controllers\ReportController::class, 'index'])->name('reports.index');
+    
+    // API Routes for Reports
+    Route::prefix('api/reports')->group(function () {
+        Route::get('/production', [App\Http\Controllers\ReportController::class, 'productionReport']);
+        Route::get('/grading', [App\Http\Controllers\ReportController::class, 'gradingReport']); // New route for grading report
+    });
 });
 
 

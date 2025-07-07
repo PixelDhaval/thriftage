@@ -21,6 +21,8 @@ export interface PrintGradedBarcodeOptions {
     gradeName: string;
     title?: string;
     isSingle?: boolean;
+    weightType?: string;
+    pairCount?: number;
 }
 
 export function printGradedBarcodes(options: PrintGradedBarcodeOptions): Promise<void> {
@@ -79,7 +81,9 @@ export function printGradedBarcodes(options: PrintGradedBarcodeOptions): Promise
                 <div class="top-row">
                     <div class="weight-corner">
                         <span class="weight-label">Weight</span>
-                        <span class="weight-value">${bag.weight?.weight || weightValue} kg</span>
+                        <span class="weight-value">
+                            ${bag.weight?.weight || weightValue} ${options.weightType === 'pair' ? 'pair' : 'kg'}
+                        </span>
                     </div>
                    <div class="section-corner">
                         <span class="section-label">Section</span>
@@ -88,7 +92,7 @@ export function printGradedBarcodes(options: PrintGradedBarcodeOptions): Promise
                 </div>
                 
                 <div class="item-name-section">
-                    <div class="item-name">${bag.item?.name || itemName}</div>
+                    <div class="item-name">${bag.item?.name || itemName} ${options.weightType === 'pair' ? `(${bag.weight?.weight} Pairs)` : ''}</div>
                 </div>
                 
                 <div class="barcode-container">
@@ -300,6 +304,19 @@ export function printGradedBarcodes(options: PrintGradedBarcodeOptions): Promise
                         margin: 10px;
                         border-radius: 5px;
                         text-align: center;
+                        font-weight: bold;
+                        color: #000;
+                    }
+                    
+                    .pair-info {
+                        margin-top: 0.1in;
+                        text-align: center;
+                        border-top: 1px solid #000;
+                        padding-top: 0.05in;
+                    }
+                    
+                    .pair-label {
+                        font-size: 14px;
                         font-weight: bold;
                         color: #000;
                     }

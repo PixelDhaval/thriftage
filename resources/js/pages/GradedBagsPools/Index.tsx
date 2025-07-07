@@ -75,6 +75,14 @@ export default function Index() {
     // Print individual graded barcode function
     const handlePrintSingleBarcode = async (gradedBag: any) => {
         try {
+            // Check if the bag has weight type info, otherwise fetch it
+            let currentWeightType = 'kg';
+            if (gradedBag.weight?.weight_type) {
+                currentWeightType = gradedBag.weight.weight_type;
+            } else if (gradedBag.item?.section?.weight_type) {
+                currentWeightType = gradedBag.item.section.weight_type;
+            }
+            
             await printGradedBarcodes({
                 bags: [gradedBag],
                 partyName: 'Graded Items',
@@ -83,6 +91,8 @@ export default function Index() {
                 itemSection: gradedBag.item?.section?.name,
                 gradeName: gradedBag.grade?.name || 'Unknown',
                 isSingle: true,
+                weightType: currentWeightType,
+                pairCount: currentWeightType === 'pair' ? parseInt(gradedBag.weight?.weight || '0') : undefined
             });
             toast.success(`Print initiated for graded barcode ${gradedBag.barcode}.`);
         } catch (error) {

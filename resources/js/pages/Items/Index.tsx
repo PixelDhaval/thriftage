@@ -197,6 +197,7 @@ export default function Index({ items }: Props) {
     const itemFilterableColumns = [
         { label: 'Name', key: 'name' },
         { label: 'Section', key: 'section.name' },
+        { label: 'Grade', key: 'grade.name' },
         { label: 'Description', key: 'description' },
     ];
 
@@ -218,6 +219,34 @@ export default function Index({ items }: Props) {
             cell: ({ row }: { row: any }) => (
                 <div className="flex items-center gap-2">
                     <span>{row.original.section?.name || '-'}</span>
+                    <span className="text-xs text-muted-foreground">
+                        ({row.original.section?.weight_type || 'kg'})
+                    </span>
+                </div>
+            ),
+        },
+        {
+            id: 'grade',
+            header: 'Grade',
+            enableSorting: true,
+            cell: ({ row }: { row: any }) => (
+                <div className="flex items-center gap-2">
+                    <span>{row.original.grade?.name || '-'}</span>
+                </div>
+            ),
+        },
+        {
+            id: 'default_weight',
+            header: 'Default Weight',
+            enableSorting: false,
+            cell: ({ row }: { row: any }) => (
+                <div className="flex items-center gap-2">
+                    <span>{row.original.default_weight?.weight || '-'}</span>
+                    {row.original.default_weight && (
+                        <span className="text-xs text-muted-foreground">
+                            ({row.original.default_weight.weight_type})
+                        </span>
+                    )}
                 </div>
             ),
         },
@@ -243,7 +272,7 @@ export default function Index({ items }: Props) {
         },
     ];
 
-    const sectionFilterableColumns = [{ label: 'Name', key: 'name' }];
+    const sectionFilterableColumns = [{ label: 'Name', key: 'name' }, { label: 'Weight Type', key: 'weight_type' }];
 
     const sectionColumns = [
         {
@@ -253,6 +282,19 @@ export default function Index({ items }: Props) {
             cell: ({ row }: { row: any }) => (
                 <div className="flex items-center gap-2">
                     <span>{row.original.name}</span>
+                </div>
+            ),
+        },
+        {
+            id: 'weight_type',
+            header: 'Weight Type',
+            enableSorting: true,
+            cell: ({ row }: { row: any }) => (
+                <div className="flex items-center gap-2">
+                    <span className="capitalize">{row.original.weight_type || 'kg'}</span>
+                    <span className="text-xs text-muted-foreground">
+                        {row.original.weight_type === 'pair' ? 'Counts in pairs' : 'Measures in kg'}
+                    </span>
                 </div>
             ),
         },
@@ -293,7 +335,7 @@ export default function Index({ items }: Props) {
         },
     ];
 
-    const weightFilterableColumns = [{ label: 'Weight', key: 'weight' }];
+    const weightFilterableColumns = [{ label: 'Weight', key: 'weight' }, { label: 'Weight Type', key: 'weight_type' }];
 
     const weightColumns = [
         {
@@ -303,6 +345,16 @@ export default function Index({ items }: Props) {
             cell: ({ row }: { row: any }) => (
                 <div className="flex items-center gap-2">
                     <span>{row.original.weight}</span>
+                </div>
+            ),
+        },
+        {
+            id: 'weight_type',
+            header: 'Weight Type',
+            enableSorting: true,
+            cell: ({ row }: { row: any }) => (
+                <div className="flex items-center gap-2">
+                    <span className="capitalize">{row.original.weight_type || 'kg'}</span>
                 </div>
             ),
         },

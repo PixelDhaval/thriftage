@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FormEventHandler, useState } from 'react';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -15,6 +16,7 @@ export default function CreateSectionForm({ onSuccess }: Props) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { data, setData, errors, setError, reset, clearErrors } = useForm({
         name: '',
+        weight_type: 'kg',
     });
 
     const handleSubmit: FormEventHandler = async (e) => {
@@ -66,6 +68,28 @@ export default function CreateSectionForm({ onSuccess }: Props) {
                     {errors.name && (
                         <p className="text-destructive text-sm">{errors.name}</p>
                     )}
+                </div>
+
+                <div className="grid gap-2">
+                    <Label htmlFor="weight_type">Weight Type</Label>
+                    <Select 
+                        value={data.weight_type} 
+                        onValueChange={value => setData('weight_type', value)}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select weight type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="kg">Kilograms (kg)</SelectItem>
+                            <SelectItem value="pair">Pairs</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    {errors.weight_type && (
+                        <p className="text-destructive text-sm">{errors.weight_type}</p>
+                    )}
+                    <p className="text-sm text-muted-foreground">
+                        Select whether this section measures items in kilograms or pairs
+                    </p>
                 </div>
             </div>
 

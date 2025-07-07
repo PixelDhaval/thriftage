@@ -195,18 +195,35 @@ class GradedBagsPoolController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        $request->validate([
+        // Validate basic fields
+        $baseValidation = [
             'item_id' => 'required|exists:items,id',
             'grade_id' => 'required|exists:grades,id',
             'weight_id' => 'required|exists:weights,id',
             'quantity' => 'required|integer|min:1|max:100',
-        ]);
+        ];
+        
+        // Check if weight type is pair to add additional validation
+        $weight = Weight::find($request->input('weight_id'));
+        if ($weight && $weight->weight_type === 'pair') {
+            $baseValidation['weight'] = 'required|numeric|min:0.01';
+        }
+        
+        $request->validate($baseValidation);
 
         // Check stock availability
-        $weight = Weight::find($request->input('weight_id'));
-        $requiredWeight = $request->input('quantity') * $weight->weight;
-
-        $section = Item::find($request->input('item_id'))->section;
+        $item = Item::find($request->input('item_id'));
+        $section = $item->section;
+        
+        // Calculate required weight based on weight type
+        $requiredWeight = 0;
+        if ($weight->weight_type === 'pair') {
+            // For pair type, use the provided weight value directly
+            $requiredWeight = $request->input('weight');
+        } else {
+            // For kg type, calculate based on weight value
+            $requiredWeight = $request->input('quantity') * $weight->weight;
+        }
 
         $gradedStock = \App\Models\GradedStock::where('section_id', $section->id)
             ->where('grade_id', $request->input('grade_id'))
@@ -225,13 +242,22 @@ class GradedBagsPoolController extends Controller
 
         $graded_bags_pools = [];
 
-        DB::transaction(function () use ($request, &$graded_bags_pools, $requiredWeight) {
+        DB::transaction(function () use ($request, &$graded_bags_pools, $weight) {
             for ($i = 0; $i < $request->input('quantity'); $i++) {
-                $graded_bags_pool = GradedBagsPool::create([
+                $bagData = [
                     'item_id' => $request->input('item_id'),
                     'grade_id' => $request->input('grade_id'),
-                    'weight_id' => $request->input('weight_id'),
-                ]);
+                    'weight_id' => $request->input('weight_id')
+                ];
+                
+                // Add weight field for pair type
+                if ($weight->weight_type === 'pair') {
+                    // Calculate weight per bag for pairs
+                    $weightPerBag = $request->input('weight') / $request->input('quantity');
+                    $bagData['weight'] = $weightPerBag;
+                }
+                
+                $graded_bags_pool = GradedBagsPool::create($bagData);
                 $graded_bags_pools[] = $graded_bags_pool->load(['item.section', 'grade', 'weight']);
             }
         });
@@ -250,18 +276,35 @@ class GradedBagsPoolController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        $request->validate([
+        // Validate basic fields
+        $baseValidation = [
             'item_id' => 'required|exists:items,id',
             'grade_id' => 'required|exists:grades,id',
             'weight_id' => 'required|exists:weights,id',
             'quantity' => 'required|integer|min:1|max:10', // Limit batch size to 10
-        ]);
+        ];
+        
+        // Check if weight type is pair to add additional validation
+        $weight = \App\Models\Weight::find($request->input('weight_id'));
+        if ($weight && $weight->weight_type === 'pair') {
+            $baseValidation['weight'] = 'required|numeric|min:0.01';
+        }
+        
+        $request->validate($baseValidation);
 
         // Check stock availability
-        $weight = \App\Models\Weight::find($request->input('weight_id'));
-        $requiredWeight = $request->input('quantity') * $weight->weight;
+        $item = \App\Models\Item::find($request->input('item_id'));
+        $section = $item->section;
 
-        $section = \App\Models\Item::find($request->input('item_id'))->section;
+        // Calculate required weight based on weight type
+        $requiredWeight = 0;
+        if ($weight->weight_type === 'pair') {
+            // For pair type, use the provided weight value directly
+            $requiredWeight = $request->input('weight');
+        } else {
+            // For kg type, calculate based on weight value
+            $requiredWeight = $request->input('quantity') * $weight->weight;
+        }
 
         $gradedStock = \App\Models\GradedStock::where('section_id', $section->id)
             ->where('grade_id', $request->input('grade_id'))
@@ -277,14 +320,23 @@ class GradedBagsPoolController extends Controller
 
         $graded_bags_pools = [];
 
-        DB::transaction(function () use ($request, &$graded_bags_pools, $requiredWeight) {
+        DB::transaction(function () use ($request, &$graded_bags_pools, $weight) {
             for ($i = 0; $i < $request->input('quantity'); $i++) {
-                $graded_bags_pool = GradedBagsPool::create([
+                $bagData = [
                     'item_id' => $request->input('item_id'),
                     'grade_id' => $request->input('grade_id'),
-                    'weight_id' => $request->input('weight_id'),
-                ]);
-                $graded_bags_pools[] = $graded_bags_pool->load(['section', 'grade', 'weight']);
+                    'weight_id' => $request->input('weight_id')
+                ];
+                
+                // Add weight field for pair type
+                if ($weight->weight_type === 'pair') {
+                    // Calculate weight per bag for pairs
+                    $weightPerBag = $request->input('weight') / $request->input('quantity');
+                    $bagData['weight'] = $weightPerBag;
+                }
+                
+                $graded_bags_pool = GradedBagsPool::create($bagData);
+                $graded_bags_pools[] = $graded_bags_pool->load(['item.section', 'grade', 'weight']);
             }
         });
 

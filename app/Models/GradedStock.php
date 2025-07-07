@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class GradedStock extends Model
 {
-    protected $fillable = ['section_id', 'grade_id', 'weight'];
+    protected $fillable = ['section_id', 'grade_id', 'weight', 'pair'];
 
     protected $casts = [
         'weight' => 'decimal:2',

@@ -1,0 +1,1 @@
+import{t as c,c as u}from"./format-CiT9Q78D.js";function f(e,a,r){const t=c(e,r==null?void 0:r.in);return isNaN(a)?u((r==null?void 0:r.in)||e,NaN):(a&&t.setDate(t.getDate()+a),t)}function N(e,a,r){return f(e,-a,r)}export{f as a,N as s};

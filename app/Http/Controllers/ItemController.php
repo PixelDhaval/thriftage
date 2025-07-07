@@ -23,7 +23,7 @@ class ItemController extends Controller
 
     public function getItems(Request $request)
     {
-        $query = Item::with('section', 'createdBy', 'updatedBy');
+        $query = Item::with('section', 'grade', 'defaultWeight', 'createdBy', 'updatedBy');
         if ($request->has('sort_column') && $request->filled('sort_column')) {
             $query->orderBy($request->input('sort_column'), $request->input('sort_direction'));
         }
@@ -70,7 +70,7 @@ class ItemController extends Controller
     }
 
     public function getItemsForSelect(Request $request){
-        $query = Item::with('section', 'createdBy', 'updatedBy');
+        $query = Item::with('section', 'grade', 'defaultWeight', 'createdBy', 'updatedBy');
 
         if($request->has('section_id') && $request->filled('section_id')){
             $query->where('section_id', $request->input('section_id'));
@@ -82,8 +82,7 @@ class ItemController extends Controller
                   ->orWhere('description', 'like', "%{$searchTerm}%")
                   ->orWhereHas('section', function ($q) use ($searchTerm) {
                       $q->where('name', 'like', "%{$searchTerm}%");
-                  });
-
+                  })->orWhere('id', $searchTerm);
         }
 
         $items = $query->get();
